@@ -1,0 +1,19 @@
+manifestVersion: 1
+id: public-pool-bch
+category: bitcoin
+name: Public Pool BCH
+version: "1.0.0"
+tagline: Solo Bitcoin Cash Mining Pool
+description: >-
+  Public Pool BCH is a self-hosted solo Bitcoin Cash mining pool running on your Umbrel.
+  It connects directly to your Bitcoin Cash Node and provides a Stratum V1 endpoint for SHA-256 mining hardware.
+  Mining rewards are paid directly to the Bitcoin Cash address supplied by the miner.
+developer: Local BCH Fork
+repo: https://github.com/benjamin-wilson/public-pool
+support: https://github.com/benjamin-wilson/public-pool/issues
+port: 3336
+gallery: []
+path: ""
+defaultPassword: ""
+releaseNotes: >-
+  Initial Bitcoin Cash compatible release.
