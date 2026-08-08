@@ -2,6 +2,7 @@ manifestVersion: 1
 id: public-pool-bch
 category: bitcoin
 name: Public Pool BCH
+icon: icon.svg
 version: "1.0.0"
 tagline: Solo Bitcoin Cash Mining Pool
 description: >-
