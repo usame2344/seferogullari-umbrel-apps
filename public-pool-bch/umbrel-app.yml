@@ -3,7 +3,7 @@ id: public-pool-bch
 category: bitcoin
 name: Public Pool BCH
 icon: https://raw.githubusercontent.com/usame2344/seferogullari-umbrel-apps/main/public-pool-bch/icon.svg
-version: "1.0.1"
+version: "1.0.2"
 tagline: Solo Bitcoin Cash Mining Pool
 description: >-
   Public Pool BCH is a self-hosted solo Bitcoin Cash mining pool running on your Umbrel.

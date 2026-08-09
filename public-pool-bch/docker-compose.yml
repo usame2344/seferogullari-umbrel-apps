@@ -17,7 +17,7 @@ services:
       - PUBLIC_POOL_STRATUM_URL=${DEVICE_DOMAIN_NAME}:3335
 
   server:
-    image: node:24.16.0-bookworm-slim
+    image: ghcr.io/usame2344/public-pool-bch:bed7e32
     working_dir: /public-pool
     command: ["/usr/local/bin/node", "dist/main"]
     restart: on-failure
@@ -25,8 +25,6 @@ services:
     ports:
       - "3335:3335/tcp"
     volumes:
-      - "/home/umbrel/public-pool-bch/runtime-built/dist:/public-pool/dist:ro"
-      - "/home/umbrel/public-pool-bch/runtime-built/node_modules:/public-pool/node_modules:ro"
       - "${APP_DATA_DIR}/data/database:/public-pool/DB"
       - "/home/umbrel/public-pool-bch/.env:/public-pool/.env:ro"
     environment:
