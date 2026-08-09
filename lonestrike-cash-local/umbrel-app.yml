@@ -1,0 +1,84 @@
+manifestVersion: 1
+id: lonestrike-cash-local
+category: bitcoin
+name: LoneStrike Cash Local
+version: "1.4.71-local.1"
+tagline: Zero-fee BCH solo pool with the first self-hosted Stratum V2 endpoint for Bitcoin Cash
+icon: https://raw.githubusercontent.com/danhaus93-ops/umbrel-bch-apps/master/sslabs-solostrike-cash/icon.svg
+description: >-
+  LoneStrike Cash is a self-hosted solo mining pool for Bitcoin Cash with dual
+  protocol support: classic Stratum V1 (asicseer-pool, a BCH-native ckpool fork)
+  and the first self-hosted Stratum V2 endpoint on Bitcoin Cash — a complete,
+  Noise-encrypted SV2 stack (Template Provider bridged to your own node plus an
+  SRI pool) with automatic per-miner difficulty.
+
+
+  Point your ASICs at your own pool, backed by your own BCHN node, and keep 100%
+  of every block you find — no pool fees, no custody, no middleman. Native SV2
+  miners and SV1 fleets behind the SRI Translator both work; one dashboard shows
+  every worker, live hashrate, best shares, and found blocks across both
+  protocols. Proven in production with multi-petahash mixed-vendor fleets.
+
+
+  Requires the Bitcoin Cash Node app to be installed and synced.
+
+
+  Displays:
+
+  • Closest Strike gauge — your best share difficulty vs. the network target
+
+  • Pool hashrate, miners online, blocks found, and accepted/rejected shares
+
+  • Per-worker breakdown: hashrate, best share, and last-seen time
+
+  • One-tap stratum connection details for your miners
+
+  • Backing-node status: block height and live network difficulty
+
+  Donations are never expected — but if LoneStrike Labs apps are useful to you, they keep development going: qpp8hg2n60mhhlsr2apw6l60x5vrdq0vp5pq3j4gyt
+developer: LoneStrike Labs
+website: https://github.com/danhaus93-ops/umbrel-bch-apps
+repo: https://github.com/danhaus93-ops/umbrel-bch-apps
+support: https://github.com/danhaus93-ops/umbrel-bch-apps/issues
+port: 3000
+gallery: []
+widgets:
+  - id: "stats"
+    type: "four-stats"
+    name: "LoneStrike Cash Stats"
+    refresh: "10s"
+    endpoint: "dashboard:3000/api/widget/stats"
+    items:
+      - label: "Pool hashrate"
+        jsonPath: "items[0].text"
+      - label: "Miners"
+        jsonPath: "items[1].text"
+      - label: "Best share"
+        jsonPath: "items[2].text"
+      - label: "Blocks"
+        jsonPath: "items[3].text"
+    example:
+      type: "four-stats"
+      link: ""
+      items:
+        - title: "Pool hashrate"
+          text: "1.2"
+          subtext: "PH/s"
+        - title: "Miners"
+          text: "7"
+          subtext: "online"
+        - title: "Best share"
+          text: "36.5G"
+          subtext: "best diff"
+        - title: "Blocks"
+          text: "0"
+          subtext: "found"
+releaseNotes: >-
+  A found block's best diff is now the achieved difficulty of the block's
+  own hash - always at or above network difficulty - and past blocks
+  recorded with an impossibly small value are corrected automatically. The
+  round effort is also recorded even when the dashboard was closed at the
+  moment of the solve, using a persisted once-a-minute round history. Worker
+  naming is more robust with the latest Stratum V2 pool build.
+submitter: LoneStrike Labs
+submission: https://github.com/danhaus93-ops/umbrel-bch-apps

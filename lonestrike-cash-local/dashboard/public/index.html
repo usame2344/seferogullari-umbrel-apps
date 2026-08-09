@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LoneStrike Cash</title>
+<link rel="manifest" href="manifest.webmanifest"/>
+<link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+<meta name="apple-mobile-web-app-title" content="LoneStrike Cash"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="theme-color" content="#08221c"/>
+<style>
+  @font-face{font-family:'Chakra Petch';font-weight:400;font-display:swap;src:url('fonts/ChakraPetch-Regular.ttf') format('truetype')}
+  @font-face{font-family:'Chakra Petch';font-weight:500;font-display:swap;src:url('fonts/ChakraPetch-Medium.ttf') format('truetype')}
+  @font-face{font-family:'Chakra Petch';font-weight:600;font-display:swap;src:url('fonts/ChakraPetch-SemiBold.ttf') format('truetype')}
+  @font-face{font-family:'Chakra Petch';font-weight:700;font-display:swap;src:url('fonts/ChakraPetch-Bold.ttf') format('truetype')}
+  @font-face{font-family:'JetBrains Mono';font-weight:300 700;font-display:swap;src:url('fonts/JetBrainsMono.ttf') format('truetype')}
+
+  :root{
+    --bg-void:#051914; --bg-deep:#08221c; --surface:#0a2e26; --raised:#0d3a30; --elevated:#11473b;
+    --line:#11473b; --line2:#18594a;
+    --green:#10B981; --mint:#34D399; --gold:#FCD34D; --red:#FB7185; --hot:#FFFFFF;
+    --text:#E6F4EE; --muted:#6E9286; --dim:#3E5F54; --blue:#4EA8FF;
+    --fd:'Chakra Petch',system-ui,-apple-system,sans-serif;
+    --fm:'JetBrains Mono','IBM Plex Mono',ui-monospace,Menlo,monospace;
+    --r:3px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:radial-gradient(120% 85% at 50% -8%, #0c3a2f 0%, var(--bg-deep) 44%, var(--bg-void) 100%);
+    color:var(--text); font-family:var(--fd);
+    min-height:100vh; padding:22px 16px 60px; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto}
+
+  header{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+  .logo{width:40px;height:40px;flex:0 0 auto}
+  .brand h1{font-family:var(--fd);font-size:20px;font-weight:700;letter-spacing:.01em;line-height:1}
+  .brand .sub{font-family:var(--fm);font-size:10.5px;color:var(--muted);margin-top:4px;letter-spacing:.12em}
+  .status{margin-left:auto;display:flex;align-items:center;gap:8px;font-family:var(--fm);
+    font-size:11px;color:var(--muted);padding:7px 12px;border:1px solid var(--line);
+    border-radius:var(--r);background:rgba(10,46,38,.6);text-transform:lowercase;letter-spacing:.04em}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--green);
+    box-shadow:0 0 0 0 rgba(16,185,129,.7);animation:pulse 2.4s infinite}
+  .dot.bad{background:var(--red);animation:none}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(16,185,129,.55)}70%{box-shadow:0 0 0 7px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
+
+  .hero{position:relative;border:1px solid var(--line);border-radius:var(--r);
+    background:linear-gradient(180deg,var(--surface),var(--bg-deep));
+    padding:30px 24px 26px;text-align:center;overflow:hidden;margin-bottom:13px}
+  .hero .eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+  .gauge{position:relative;width:232px;height:232px;margin:0 auto}
+  .gauge svg{transform:rotate(-90deg);display:block;width:100%;height:100%}
+  .gauge .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .gauge .pct{font-family:var(--fm);font-size:13px;color:var(--gold);letter-spacing:.06em}
+  .gauge .best{font-family:var(--fm);font-size:42px;font-weight:600;letter-spacing:-.01em;line-height:1;margin:5px 0 3px;color:var(--hot);text-shadow:0 0 24px rgba(52,211,153,.4)}
+  .gauge .bestlabel{font-family:var(--fm);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+  .hero .foot{margin-top:18px;font-family:var(--fm);font-size:12px;color:var(--muted)}
+  .hero .foot b{color:var(--gold);font-weight:500}
+
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;margin-bottom:13px}
+  .card{border:1px solid var(--line);border-radius:var(--r);background:linear-gradient(180deg,var(--surface),var(--bg-deep));padding:15px 16px 14px}
+  .card .k{font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .card .v{font-family:var(--fm);font-size:27px;font-weight:600;letter-spacing:-.01em;margin-top:9px;line-height:1;color:var(--text)}
+  .card .v small{font-size:13px;color:var(--muted);font-weight:400;margin-left:3px}
+  .card .meta{font-family:var(--fm);font-size:11px;color:var(--dim);margin-top:6px}
+  .v.green{color:var(--mint)} .v.gold{color:var(--gold)}
+
+  .sec{font-family:var(--fm);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin:22px 2px 9px}
+
+  .panel{border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+  .row{display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:none}
+  .row .rk{font-family:var(--fm);font-size:11px;color:var(--muted);width:100px;flex:0 0 auto;letter-spacing:.04em;text-transform:uppercase}
+  .row .rv{font-family:var(--fm);font-size:13px;color:var(--text);flex:1;word-break:break-all}
+  .copy{flex:0 0 auto;border:1px solid var(--line2);background:rgba(16,185,129,.08);color:var(--mint);font-family:var(--fm);font-size:11px;padding:5px 11px;border-radius:var(--r);cursor:pointer;transition:.15s;text-transform:uppercase;letter-spacing:.05em}
+  .copy:hover{background:rgba(16,185,129,.18)}
+  .copy:active{transform:scale(.96)}
+
+  .workers{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface)}
+  .workers .wh,.workers .wr{display:grid;grid-template-columns:1.5fr 1fr 1fr .9fr 62px;gap:8px;padding:11px 15px;align-items:center}
+  .wreset{border:1px solid var(--line2);background:none;color:var(--dim);font-family:var(--fm);font-size:12px;width:26px;height:24px;border-radius:var(--r);cursor:pointer}
+  .wreset:hover{color:var(--gold);border-color:var(--gold)}
+  .whide{color:var(--red);border-color:rgba(251,113,133,.45);background:rgba(251,113,133,.07)}
+  .whide:hover{color:var(--red);border-color:var(--red);background:rgba(251,113,133,.14)}
+  .whide[data-arm="1"]{background:rgba(251,113,133,.2);border-color:var(--red)}
+  .workers .wh{background:var(--raised);font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .workers .wr{border-top:1px solid var(--line);font-family:var(--fm);font-size:12px}
+  .workers .wr .name{color:var(--text);min-width:0}
+  .workers .wr .name .wn{display:flex;flex-wrap:wrap;align-items:center;gap:4px;min-width:0}
+  .workers .wr .name .wnn{white-space:nowrap}
+  .workers .wr .name .wup{color:var(--muted);font-size:11px;margin-top:2px;display:block}
+  .workers .wr .hr{color:var(--mint)} .workers .wr .bd{color:var(--gold)}
+  .workers .wr .ls{color:var(--muted);text-align:right}
+  .wcol-r{text-align:right}
+  .empty{padding:26px 16px;text-align:center;font-family:var(--fm);font-size:12px;color:var(--dim)}
+
+  footer{margin-top:24px;text-align:center;font-family:var(--fm);font-size:11px;color:var(--dim);line-height:1.9}
+  .badge{display:inline-block;border:1px solid var(--line2);border-radius:var(--r);padding:3px 9px;color:var(--mint);margin:0 3px;letter-spacing:.04em}
+  @media(max-width:520px){
+    .gauge{width:202px;height:202px}.gauge .best{font-size:35px}
+    .row .rk{width:78px}
+    .workers .wh,.workers .wr{grid-template-columns:1.2fr .9fr .9fr .7fr 50px;gap:5px;padding:9px 8px;font-size:11px}
+    .workers .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .wreset{width:22px;height:21px;font-size:11px}
+  }
+</style>
+<style>
+/* ---- block-found celebration (namespaced cel*) ---- */
+.celfx{position:fixed;inset:0;z-index:400;display:none;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;background:rgba(4,20,15,.88);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.celfx.on{display:flex}
+.celfx canvas{position:absolute;inset:0;width:100%;height:100%;z-index:4}
+.celwrap{position:relative;z-index:2;text-align:center;pointer-events:none}
+.celdismiss{position:absolute;bottom:34px;left:0;right:0;text-align:center;font-size:11px;color:var(--muted);z-index:5;letter-spacing:.1em;text-transform:uppercase;opacity:0;transition:opacity .6s;font-family:var(--fm)}
+.celfx.struck .celdismiss{opacity:.7;transition-delay:1.6s}
+.celkick{font-family:var(--fm);font-size:12px;letter-spacing:.4em;color:var(--mint);text-transform:uppercase;opacity:0;animation:celkick .5s .1s forwards}
+@keyframes celkick{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.celhead{font-family:var(--fm);font-size:min(13vw,64px);font-weight:800;letter-spacing:-.02em;line-height:1;margin:8px 0 0;background:linear-gradient(180deg,#eafff7,var(--mint));-webkit-background-clip:text;background-clip:text;color:transparent;opacity:0;transform:scale(.7);text-shadow:0 0 60px rgba(52,211,153,.5)}
+.celfx.struck .celhead{animation:celpop .55s cubic-bezier(.2,1.4,.35,1) forwards}
+@keyframes celpop{to{opacity:1;transform:none}}
+.celmeta{font-family:var(--fm);font-size:14px;color:var(--muted);margin-top:12px;opacity:0}
+.celmeta b{color:var(--gold)} .celmeta .celproto{color:var(--mint)}
+.celfx.struck .celmeta{animation:celfadem .5s .35s forwards}
+@keyframes celfadem{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* true 3D cube — NO filter on any 3D ancestor: filter flattens preserve-3d */
+.celscene{position:relative;height:220px;margin:2px auto 0}
+.celglow{position:absolute;left:50%;top:58%;width:230px;height:110px;transform:translate(-50%,-50%);background:radial-gradient(50% 50% at 50% 50%, rgba(16,185,129,.5), rgba(16,185,129,0) 70%);z-index:0}
+.celstage{position:absolute;inset:0;perspective:820px;z-index:1}
+.celcube{position:absolute;left:50%;top:56%;width:110px;height:110px;margin:-55px 0 0 -55px;transform-style:preserve-3d;transform:rotateX(-24deg) rotateY(-34deg)}
+.celfx.struck .celcube{animation:celjud .5s cubic-bezier(.3,1.6,.4,1) forwards, celsway 5s .5s ease-in-out infinite}
+@keyframes celjud{0%{transform:rotateX(-24deg) rotateY(-34deg) scale(1)}18%{transform:rotateX(-16deg) rotateY(-28deg) scale(.93,1.06) translateY(5px)}45%{transform:rotateX(-27deg) rotateY(-38deg) scale(1.04,.96)}100%{transform:rotateX(-24deg) rotateY(-34deg) scale(1)}}
+@keyframes celsway{0%,100%{transform:rotateX(-24deg) rotateY(-34deg)}50%{transform:rotateX(-24deg) rotateY(-24deg)}}
+.celface{position:absolute;width:110px;height:110px;display:flex;align-items:center;justify-content:center}
+.celtop{background:linear-gradient(135deg,#5ff0c0,#2bd39a);transform:rotateX(90deg) translateZ(55px)}
+.celfront{background:linear-gradient(160deg,#18b083,#0c7a5c);transform:translateZ(55px)}
+.celright{background:linear-gradient(160deg,#0c7a5c,#064635);transform:rotateY(90deg) translateZ(55px)}
+.celback{background:#0a6a50;transform:rotateY(180deg) translateZ(55px)}
+.celleft{background:#086048;transform:rotateY(-90deg) translateZ(55px)}
+.celbot{background:#053528;transform:rotateX(-90deg) translateZ(55px)}
+.celedge{box-shadow:inset 0 0 0 2px rgba(180,255,230,.22)}
+.celbtc{width:58px;height:58px;border-radius:13px;background:#052018;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1.5px rgba(52,211,153,.35), 0 2px 8px rgba(0,25,15,.5)}
+.celhole{position:absolute;inset:0;opacity:0;transform:scale(.3);transform-origin:52% 46%}
+.celfx.struck .celhole{opacity:1;transform:scale(1);transition:opacity .1s, transform .28s cubic-bezier(.2,1.5,.4,1)}
+.celpick{position:absolute;left:50%;top:50%;font-size:86px;z-index:3;transform-origin:85% 85%;opacity:0;line-height:1}
+.celfx.on .celpick{animation:celswing .6s cubic-bezier(.55,0,.9,.35) forwards}
+@keyframes celswing{0%{opacity:0;transform:translate(96px,-230px) rotate(112deg)}22%{opacity:1}100%{opacity:1;transform:translate(-2px,-138px) rotate(-18deg)}}
+.celfx.struck .celpick{animation:celrec .8s .02s ease-out forwards}
+@keyframes celrec{0%{opacity:1;transform:translate(-2px,-138px) rotate(-18deg)}30%{transform:translate(30px,-176px) rotate(40deg)}100%{opacity:0;transform:translate(86px,-224px) rotate(96deg)}}
+.celflash{position:absolute;inset:0;background:rgba(52,211,153,0);z-index:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <svg class="logo" viewBox="0 0 1024 1024" aria-hidden="true">
+      <defs>
+        <linearGradient id="sscMark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#35F0BD"/><stop offset="0.5" stop-color="#10C795"/><stop offset="1" stop-color="#0A8E6A"/></linearGradient>
+        <linearGradient id="sscSteel" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#F4F7FA"/><stop offset="0.5" stop-color="#C2CAD3"/><stop offset="1" stop-color="#828D9A"/></linearGradient>
+        <linearGradient id="sscWood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#B07A3F"/><stop offset="0.55" stop-color="#8A5A2A"/><stop offset="1" stop-color="#5E3C1C"/></linearGradient>
+        <linearGradient id="sscGrip" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#221E19"/><stop offset="1" stop-color="#0A0806"/></linearGradient>
+      </defs>
+      <g transform="translate(-2,14)">
+        <g transform="translate(296,752) scale(0.305,-0.305)">
+          <path d="M945 1409H972Q1230 1409 1362.5 1319.5Q1495 1230 1495 1055Q1495 935 1428.5 852.5Q1362 770 1226 741Q1397 721 1486.5 633.5Q1576 546 1576 402Q1576 210 1432.0 105.0Q1288 0 1032 0H948V-240H750V0H626V-240H419V0H137V207H327V1216H137V1409H416V1639H619V1409H743V1639H945ZM1198 1015Q1198 1110 1137.5 1150.0Q1077 1190 958 1190H622V841H960Q1085 841 1141.5 884.5Q1198 928 1198 1015ZM1280 425Q1280 623 996 623H622V219H1007Q1149 219 1214.5 270.5Q1280 322 1280 425Z" fill="url(#sscMark)"/>
+        </g>
+        <g transform="translate(192,72) scale(0.58667)">
+          <path d="M335 276 L390 276 L806 1052 L741 1052 Z" fill="url(#sscWood)" stroke="#0A0E12" stroke-width="13" stroke-linejoin="round"/>
+          <path d="M345 285 L362 285 L766 1052 L748 1052 Z" fill="#C8965A" opacity="0.55"/>
+          <path d="M780 989 L927 1263 L971 1309 Q952 1345 929 1365 Q899 1373 859 1367 L847 1305 L706 1027 Z" fill="url(#sscGrip)" stroke="#0A0E12" stroke-width="13" stroke-linejoin="round"/>
+          <path d="M0 0 C6.4 6.3 10 13.2 13.8 21.1 C14.4 22.3 15 23.4 15.5 24.6 C23.8 41.5 23.8 41.5 21.1 51.1 C15.1 59.4 4 63.9 -5 68.3 C-6.3 69 -7.6 69.6 -9 70.3 C-22.2 76.8 -35.8 82.1 -49.8 87 C-60.5 90.9 -70.7 96.1 -80.9 101.2 C-84.1 102.9 -87.4 104.5 -90.6 106.1 C-92.7 107.1 -94.8 108.2 -96.9 109.2 C-97.8 109.7 -98.8 110.2 -99.8 110.7 C-106.5 114.1 -112.7 117.9 -119 122 C-121.2 123.2 -123.4 124.4 -125.6 125.6 C-131.2 128.5 -136.6 131.7 -142 135 C-143.8 136 -145.7 137 -147.5 138 C-151.1 139.9 -154.5 141.9 -158 144 C-162.4 146.6 -166.8 149.1 -171.3 151.5 C-173.9 152.9 -176.4 154.5 -179 156 C-182.5 158.1 -185.9 160.1 -189.5 162 C-208 172 -208 172 -211 178 C-211.6 188.5 -211.9 197.5 -207 207 C-205.2 210.6 -204 213.2 -203.9 217.2 C-205.6 221.4 -207.9 222 -212 224 C-220.2 228.3 -228 232.9 -235.7 237.9 C-239 240 -239 240 -244.2 242.6 C-249.1 245.1 -253.1 248 -257.4 251.4 C-260 253 -260 253 -266 253 C-269.9 249.2 -272.8 245.3 -275.7 240.6 C-278 237 -278 237 -282 235 C-285.6 234.8 -289.2 234.6 -292.8 234.6 C-293.7 234.6 -293.7 234.6 -298.5 234.5 C-304.2 235 -307.2 236.1 -312 239 C-313.2 239.7 -314.4 240.4 -315.6 241.1 C-319.4 243.4 -323.2 245.7 -327 248 C-327.6 248.3 -327.6 248.3 -330.4 250 C-337 254 -343.1 258.2 -349.2 262.8 C-351.7 264.8 -354.3 266.7 -357 268.5 C-364.3 273.5 -371.4 278.7 -378.1 284.6 C-382 288 -386 291 -390.3 294 C-396 298.2 -401.5 302.3 -406.4 307.4 C-411.1 312.3 -416.4 316.1 -422 320 C-427.5 324 -432.9 328 -437.9 332.6 C-445.1 338.7 -453.3 343.1 -461.6 347.5 C-470.7 352.4 -478.1 357.9 -485.2 365.4 C-493.2 373.5 -502.3 379.2 -512 385 C-513.6 385 -515.3 385 -517 385 C-518 380 -518 380 -515.7 375.7 C-512.2 371.2 -508.9 368.3 -504.5 365 C-499.4 360.9 -495.7 356.3 -492.6 350.6 C-488 342.4 -481.8 336.5 -474.4 330.6 C-469.2 326.3 -465.6 322.1 -462.2 316.2 C-456.6 307.9 -449 300.9 -442 293.8 C-441.1 292.9 -440.3 292.1 -439.5 291.3 C-437.7 289.5 -436 287.8 -434.3 286 C-431.6 283.4 -429 280.7 -426.4 278.1 C-424.7 276.4 -423 274.7 -421.3 273 C-420.5 272.2 -419.8 271.4 -419 270.6 C-414.1 265.8 -409.1 261.7 -403.4 257.9 C-400.8 255.9 -399.2 253.8 -397.4 251.1 C-391.9 243.1 -384.9 236.5 -378 229.7 C-375.7 227.3 -373.4 225 -371 222.6 C-363.4 215 -355.8 208.2 -347 202 C-344.4 199.4 -341.8 196.8 -339.2 194.1 C-331.3 186 -322.8 179.7 -312.8 174.3 C-309 171.2 -307.8 168 -305.9 163.6 C-302.1 154.8 -299.3 150.4 -290.9 145.7 C-287.9 143.9 -285.1 142.1 -282.2 140.2 C-274.8 135.7 -267 132.1 -259.1 128.4 C-251.5 124.8 -244 121.1 -236.8 116.8 C-235.5 116 -234.2 115.2 -232.9 114.4 C-231.6 113.6 -230.3 112.8 -229 112 C-226.5 110.5 -224 109 -221.5 107.5 C-220.3 106.8 -219 106 -217.8 105.2 C-146.5 62.5 -146.5 62.5 -142.7 60.2 C-140.3 58.8 -137.8 57.3 -135.4 55.8 C-117.8 45.1 -99.4 35.4 -80.3 27.7 C-73.4 24.8 -66.8 21.5 -60.2 18.1 C-51.7 13.7 -43.2 9.6 -34.3 6.2 C-30.6 4.9 -27.1 3.3 -23.6 1.8 C-9.2 -4.4 -9.2 -4.4 0 0 Z " transform="translate(620,96)" fill="url(#sscSteel)" stroke="#0A0E12" stroke-width="13" stroke-linejoin="round"/>
+          <path d="M0 0 C3.9 3.1 6.3 6.3 8 11 C8.2 14.4 8.2 14.4 7 18 C0.4 25.4 -7.7 29.3 -16.5 33.7 C-21.5 36.2 -26.2 39.1 -31 42 C-33.6 43.3 -36.2 44.7 -38.8 46 C-45.6 49.6 -51.9 53.6 -58.2 57.9 C-67 63.9 -75.8 68.5 -85.4 72.9 C-90.6 75.3 -95.2 77.9 -100 81 C-102.2 82.3 -104.4 83.7 -106.6 85 C-112.8 88.9 -119 92.8 -124.9 97.1 C-128 99 -128 99 -132.7 100.8 C-138 103 -141.8 105.6 -146.3 109.1 C-150.3 111.9 -154.6 113.9 -159 116 C-161.3 117.4 -163.7 118.8 -166 120.2 C-173.2 124.6 -180.5 128.7 -187.9 132.7 C-191 134.4 -194 136.2 -197.1 138.1 C-201.5 140.7 -206 143.1 -210.6 145.5 C-216.5 148.6 -221.7 152 -227 156 C-230.3 157.3 -233.7 158.7 -237 160 C-239.7 161.6 -242.3 163.3 -245 165 C-248.3 167.2 -251.7 169.3 -255.2 171.3 C-261.9 175.3 -268.6 179.5 -275.2 183.7 C-279.1 186 -283 188.1 -287 190 C-293.9 193.4 -300.5 197 -307 201 C-307.5 201.3 -307.5 201.3 -310 202.8 C-321.2 209.7 -332.4 216.6 -343.4 223.9 C-348.5 227.1 -353.5 229.6 -359 232 C-359.7 232.5 -359.7 232.5 -363.2 235.2 C-366.8 237.9 -368.6 238.9 -373 239 C-373.7 238.7 -374.3 238.3 -375 238 C-373.8 232 -371.1 229.3 -367 225 C-366.1 224 -365.2 223.1 -364.3 222.1 C-359.7 217.4 -355.3 213.1 -349.9 209.4 C-343.2 204.8 -337.7 198.8 -332.1 192.9 C-326 186.5 -319.8 182.6 -312 178.4 C-304.9 174.2 -303.1 169.2 -300.4 161.6 C-295.6 149.3 -282.9 144.3 -271.8 138.8 C-269.9 137.9 -267.9 136.9 -266 136 C-263 134.5 -260.1 133.1 -257.1 131.6 C-246.7 126.5 -236.6 121.5 -227 115 C-224.6 113.5 -222.2 112.1 -219.8 110.6 C-218.5 109.9 -217.2 109.1 -215.9 108.3 C-214.6 107.6 -213.3 106.8 -212 106 C-209.5 104.5 -207 103 -204.5 101.5 C-144.5 65.5 -144.5 65.5 -141 63.4 C-138.5 61.9 -136 60.4 -133.6 58.9 C-124.5 53.3 -115.3 48.4 -105.8 43.7 C-104.3 42.9 -102.8 42.2 -101.2 41.4 C-98.1 39.8 -94.9 38.3 -91.8 36.7 C-87 34.3 -82.2 31.9 -77.5 29.5 C-74.4 28 -71.3 26.5 -68.2 24.9 C-66.8 24.2 -65.4 23.5 -64 22.8 C-56.2 18.9 -48.3 15.4 -40.2 12.2 C-36.1 10.7 -32.3 8.8 -28.4 6.9 C-8 -2.8 -8 -2.8 0 0 Z " transform="translate(617,96)" fill="#FFFFFF"/>
+        </g>
+      </g>
+    </svg>
+    <div class="brand">
+      <h1>LoneStrike Cash</h1>
+      <div class="sub">BCH SOLO POOL · ZERO-FEE</div>
+    </div>
+    <div class="status" id="status"><span class="dot" id="statusDot"></span><span id="statusText">connecting…</span></div>
+  </header>
+
+  <section class="hero">
+    <div class="eyebrow">Closest strike</div>
+    <div class="gauge">
+      <svg width="232" height="232" viewBox="0 0 232 232">
+        <circle cx="116" cy="116" r="100" fill="none" stroke="#0e3b30" stroke-width="13"/>
+        <circle id="arc" cx="116" cy="116" r="100" fill="none" stroke="url(#g)" stroke-width="13"
+          stroke-linecap="round" stroke-dasharray="628" stroke-dashoffset="628"
+          style="filter:drop-shadow(0 0 9px rgba(52,211,153,.6));transition:stroke-dashoffset 1.1s cubic-bezier(.4,0,.2,1)"/>
+        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#10B981"/><stop offset="1" stop-color="#FCD34D"/>
+        </linearGradient></defs>
+      </svg>
+      <div class="center">
+        <div class="pct" id="strikePct">—</div>
+        <div class="best" id="bestShare">—</div>
+        <div class="bestlabel">best share diff</div>
+      </div>
+    </div>
+    <div class="foot">network needs <b id="netDiff">—</b> to mine a block</div>
+    <button class="copy" id="resetAll" style="margin-top:12px">Reset best</button>
+    <label style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;font-family:var(--fm);font-size:11px;color:var(--dim);cursor:pointer"><input type="checkbox" id="logSharesToggle"/> Live best rebuild <span title="Logs every share to disk so a per-worker reset rebuilds its best from scratch instead of just hiding it. Off = zero disk use." style="opacity:.6">(?)</span></label>
+  </section>
+
+  <div class="grid">
+    <div class="card"><div class="k">Pool hashrate</div><div class="v green" id="hashrate">—<small id="hrUnit"></small></div><div class="meta" id="hrMeta">5-minute average</div></div>
+    <div class="card"><div class="k">Miners online</div><div class="v" id="workers">—</div><div class="meta" id="wkMeta">0 connected</div></div>
+    <div class="card"><div class="k">Blocks found</div><div class="v gold" id="blocks">—</div><div class="meta" id="blkMeta">all-time</div></div>
+    <div class="card"><div class="k">Shares</div><div class="v" id="shares">—</div><div class="meta" id="shMeta">accepted / rejected</div></div>
+  </div>
+
+  <div class="sec">Round effort</div>
+  <div class="addr">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <div id="effortPct" style="font-family:var(--fm);font-size:30px;font-weight:700;color:var(--mint)">&mdash;</div>
+      <div class="hint" id="effortSub" style="margin:0">shares this round vs network difficulty</div>
+    </div>
+    <div style="height:7px;background:#0b231d;border:1px solid var(--line2);border-radius:999px;margin-top:10px;overflow:hidden">
+      <div id="effortBar" style="height:100%;width:0%;background:linear-gradient(90deg,#34D399,#FCD34D);transition:width .6s"></div>
+    </div>
+    <div class="hint" id="ttb" style="margin-top:9px">&mdash;</div>
+  </div>
+
+  <div class="sec" id="elecHead" style="cursor:pointer;display:flex;align-items:center;color:var(--blue)">Electricity<span id="elecChev" style="margin-left:auto;color:var(--blue);transition:transform .2s">&#9662;</span></div>
+  <div class="addr" id="elecBody">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <label style="flex:1;min-width:110px;font-family:var(--fm);font-size:11px;color:var(--dim)">RATE / kWh<input id="elRate" type="number" min="0" step="0.01" inputmode="decimal" style="width:100%;margin-top:5px;background:#0b231d;border:1px solid var(--line2);border-radius:var(--r);color:var(--text);font-family:var(--fm);font-size:14px;padding:9px 10px"/></label>
+      <label style="flex:1;min-width:110px;font-family:var(--fm);font-size:11px;color:var(--dim)">RIG POWER (W)<input id="elWatts" type="number" min="0" step="10" inputmode="numeric" style="width:100%;margin-top:5px;background:#0b231d;border:1px solid var(--line2);border-radius:var(--r);color:var(--text);font-family:var(--fm);font-size:14px;padding:9px 10px"/></label>
+    </div>
+    <div style="display:flex;justify-content:space-between;text-align:center;margin-top:14px">
+      <div style="flex:1"><div id="elDay" style="font-family:var(--fm);font-size:25px;font-weight:700;color:var(--mint)">&mdash;</div><div class="hint" style="margin:0">/ day</div></div>
+      <div style="flex:1"><div id="elWk" style="font-family:var(--fm);font-size:25px;font-weight:700;color:var(--mint)">&mdash;</div><div class="hint" style="margin:0">/ week</div></div>
+      <div style="flex:1"><div id="elMo" style="font-family:var(--fm);font-size:25px;font-weight:700;color:var(--mint)">&mdash;</div><div class="hint" style="margin:0">/ month</div></div>
+    </div>
+    <div class="hint" id="elBlock" style="margin-top:11px;padding-top:10px;border-top:1px solid var(--line2)">enter your rate and rig watts above</div>
+  </div>
+
+  <div class="sec">Payout address</div>
+  <div class="panel">
+    <div class="row" style="flex-wrap:wrap;gap:9px">
+      <input id="addrInput" inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false"
+        placeholder="bitcoincash:q…  (where blocks pay)"
+        style="flex:1;min-width:200px;background:var(--bg-deep);border:1px solid var(--line2);border-radius:var(--r);
+               color:var(--mint);font-family:var(--fm);font-size:13px;padding:10px 12px;outline:none"/>
+      <button class="copy" id="addrSave" style="padding:10px 16px">Save</button>
+      <div id="addrMsg" style="flex-basis:100%;font-family:var(--fm);font-size:11px;color:var(--muted);min-height:14px"></div>
+    </div>
+  </div>
+
+  <div class="sec">Point your miner here</div>
+  <div class="panel">
+    <div class="row"><div class="rk">Stratum URL</div><div class="rv" id="stratum">stratum+tcp://—</div><button class="copy" data-c="stratum">Copy</button></div>
+    <div class="row"><div class="rk">Username</div><div class="rv" id="userHint">your BCH address — <span style="color:var(--muted)">set it above</span></div><button class="copy" data-c="user">Copy</button></div>
+    <div class="row"><div class="rk">Password</div><div class="rv">x</div><button class="copy" data-c="pass">Copy</button></div>
+  </div>
+
+  <div class="sec">Stratum V2 <span style="font-size:10px;color:var(--dim);letter-spacing:.1em">SELF-HOSTED &middot; NOISE-ENCRYPTED</span></div>
+  <div class="panel">
+    <div class="row"><div class="rk">Status</div><div class="rv" id="sv2status">disabled</div><span class="dot bad" id="sv2dot" style="margin-right:8px"></span></div>
+    <div class="row"><div class="rk">SV2 URL</div><div class="rv" id="sv2url">&mdash;</div><button class="copy" data-c="sv2url">Copy</button></div>
+    <div class="row"><div class="rk">Authority key</div><div class="rv" id="sv2pub" style="word-break:break-all">&mdash;</div><button class="copy" data-c="sv2pub">Copy</button></div>
+  </div>
+  <div class="addr">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <label for="sv2SpmInput" style="font-family:var(--fm);font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:3px">Shares / min
+        <input id="sv2SpmInput" inputmode="decimal" placeholder="6" title="Target shares per minute per miner. Vardiff tunes each miner's difficulty to hit this rate: lower = fewer, larger shares; higher = more, smaller shares." style="width:74px;background:#0b231d;border:1px solid var(--line2);border-radius:var(--r);color:var(--text);font-family:var(--fm);font-size:13px;padding:10px 8px"/></label>
+      <label for="sv2XnInput" style="font-family:var(--fm);font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:3px">Extranonce2 bytes
+        <input id="sv2XnInput" inputmode="numeric" title="Size of the miner's rollable extranonce2 search space, in bytes (4-32, default 16). Larger gives each miner more nonce room before it must ask for new work; smaller frees coinbase scriptSig space." style="width:74px;background:#0b231d;border:1px solid var(--line2);border-radius:var(--r);color:var(--text);font-family:var(--fm);font-size:13px;padding:10px 8px"/></label>
+      <label for="sv2TtlInput" style="font-family:var(--fm);font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:3px">Idle worker timeout (min)
+        <input id="sv2TtlInput" inputmode="numeric" title="A worker with no accepted shares for this many minutes is removed from the list (5-1440). It reappears on its next share. Applies within a couple of minutes - no restart." style="width:74px;background:#0b231d;border:1px solid var(--line2);border-radius:var(--r);color:var(--text);font-family:var(--fm);font-size:13px;padding:10px 8px"/></label>
+    <!-- The pool reads these ONCE, at container start, so what you saved and
+         what it enforces can differ indefinitely. That used to be said only in a
+         title= tooltip, which a phone cannot render -- a tester lost a day to a
+         pool quietly running a different value. Say it out loud. -->
+    <div style="font-family:var(--fm);font-size:10px;color:var(--dim);margin-top:6px;line-height:1.5">
+      Shares/min and Extranonce2 take effect when the pool restarts. Idle timeout applies right away.</div>
+    <div id="sv2Pending" style="display:none;margin-top:8px;padding:8px 10px;border-radius:8px;
+      font-family:var(--fm);font-size:11px;line-height:1.5;
+      background:rgba(224,147,78,.08);border:1px solid rgba(224,147,78,.3);color:var(--warn)"></div>
+      <label for="sv2AddrInput" style="font-family:var(--fm);font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:3px;flex:1;min-width:220px">Payout address
+        <input id="sv2AddrInput" inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="BCH payout address to enable SV2" title="Every SV2 block you find pays here in full. Standard BCH addresses only (P2PKH/P2SH)." style="width:100%;background:#0b231d;border:1px solid var(--line2);border-radius:var(--r);color:var(--text);font-family:var(--fm);font-size:13px;padding:10px 12px"/></label>
+      <button class="copy" id="sv2Save" style="padding:10px 16px">Save</button>
+      <a class="copy" id="sv2LogDl" href="/api/sv2/log?tail=4000" download style="padding:10px 16px;text-decoration:none;display:inline-block" title="Download the last 4000 lines of the SV2 pool log with your payout address, worker names and miner IPs removed - safe to paste into Discord or an issue.">Download log</a>
+      <a id="sv2LogRaw" href="/api/sv2/log?tail=4000&raw=1" download style="font-family:var(--fm);font-size:10px;color:var(--dim);align-self:center;text-decoration:underline" title="Unredacted. Contains your payout address, worker names and miner IPs. Only share privately.">raw</a>
+      <div id="sv2Msg" style="flex-basis:100%;font-family:var(--fm);font-size:11px;color:var(--muted);min-height:14px"></div>
+    </div>
+    <div class="hint" style="margin-top:9px">Saving an address enables the SV2 endpoint within ~10s (authority key is generated on first enable). To change or disable, save again and restart the app. SV1 mining above is unaffected.</div>
+  </div>
+
+  <div class="sec">Pool difficulty &middot; SV1</div>
+  <div class="addr">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <label style="flex:1;min-width:90px;font-family:var(--fm);font-size:11px;color:var(--dim)">MIN<input id="diffMin" type="number" min="1" style="width:100%;margin-top:5px;background:#0b231d;border:1px solid var(--line2);border-radius:var(--r);color:var(--text);font-family:var(--fm);font-size:14px;padding:9px 10px"/></label>
+      <label style="flex:1;min-width:90px;font-family:var(--fm);font-size:11px;color:var(--dim)">START<input id="diffStart" type="number" min="1" style="width:100%;margin-top:5px;background:#0b231d;border:1px solid var(--line2);border-radius:var(--r);color:var(--text);font-family:var(--fm);font-size:14px;padding:9px 10px"/></label>
+      <label style="flex:1;min-width:90px;font-family:var(--fm);font-size:11px;color:var(--dim)">MAX (0 = none)<input id="diffMax" type="number" min="0" style="width:100%;margin-top:5px;background:#0b231d;border:1px solid var(--line2);border-radius:var(--r);color:var(--text);font-family:var(--fm);font-size:14px;padding:9px 10px"/></label>
+      <button class="copy" id="diffSave" style="height:38px;padding:10px 16px">Save</button>
+    </div>
+    <div class="hint" style="margin-top:9px">Saving restarts the pool (~5s); miners reconnect automatically.</div>
+  </div>
+
+  <div class="sec">Workers</div>
+  <div class="workers" id="workersTable">
+    <div class="wh"><div>Worker</div><div class="wcol-r">Hashrate</div><div class="wcol-r bd-col">Best</div><div class="wcol-r ls-h">Last</div><div></div></div>
+    <div class="empty" id="workersEmpty">No miners connected yet — point one at the stratum URL above.</div>
+  </div>
+
+
+  <div class="sec" style="display:flex;align-items:center;gap:10px">Found blocks
+    <label style="display:flex;align-items:center;gap:5px;font-family:var(--fm);font-size:10px;color:var(--dim);cursor:pointer;text-transform:none;letter-spacing:0;margin-left:auto"><input type="checkbox" id="celebToggle"/> celebration</label>
+    <a href="#" id="celebPreview" style="font-family:var(--fm);font-size:10px;color:var(--dim);text-decoration:underline;text-transform:none;letter-spacing:0">preview</a>
+  </div>
+  <div class="workers" id="blocksTable">
+    <div class="wh" style="grid-template-columns:1fr 1fr .8fr .9fr 1.5fr"><div>Height</div><div class="wcol-r">When</div><div class="wcol-r">Effort</div><div class="wcol-r">Best diff submitted</div><div class="wcol-r">Block</div></div>
+    <div class="empty" id="blocksEmpty">No blocks yet &mdash; keep striking.</div>
+  </div>
+  <div id="blocksMore" style="display:none;text-align:center;margin-top:8px"><button style="background:none;border:1px solid var(--line2);color:var(--muted);font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:7px 16px;border-radius:var(--r);cursor:pointer">Show more</button></div>
+
+  <div class="sec">Backing node</div>
+  <div class="panel">
+    <div class="row"><div class="rk">Node</div><div class="rv" id="nodeName">Bitcoin Cash Node (BCHN)</div><span class="dot" id="nodeDot" style="margin-right:8px"></span></div>
+    <div class="row"><div class="rk">Block height</div><div class="rv" id="height">—</div></div>
+    <div class="row"><div class="rk">Net difficulty</div><div class="rv" id="netDiff2">—</div></div>
+  </div>
+
+  <footer>
+    <span class="badge">solo</span><span class="badge">zero-fee</span><span class="badge">your node</span><br/>
+    <span id="ver">v1.4.48</span> · SV1 powered by asicseer-pool · SV2 powered by LoneStrike Cash-Pool<br/><span style="font-size:10px;color:var(--dim)">the first Stratum V2 pool for Bitcoin Cash, written from scratch</span><br/><span style="font-size:10px;color:var(--dim)">donations never expected, always fuel: <span style="color:var(--muted)">qpp8hg2n60mhhlsr2apw6l60x5vrdq0vp5pq3j4gyt</span></span>
+  </footer>
+</div>
+
+<!-- block-found celebration overlay -->
+<div class="celfx" id="celfx">
+  <canvas id="celcv"></canvas>
+  <div class="celflash" id="celflash"></div>
+  <div class="celwrap">
+    <div class="celkick" id="celkick">Stratum V2 · solo</div>
+    <div class="celhead">BLOCK FOUND</div>
+    <div class="celscene">
+      <div class="celglow"></div>
+      <div class="celstage"><div class="celcube">
+        <div class="celface celtop celedge">
+          <div class="celhole"><svg viewBox="0 0 110 110">
+            <path d="M52 44 L26 30 M60 40 L84 22 M44 54 L18 62 M66 54 L92 60 M50 60 L38 88 M62 58 L76 84" stroke="rgba(6,40,28,.85)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+            <polygon points="53,32 66,36 72,46 68,58 56,64 44,60 38,50 42,38" fill="none" stroke="rgba(252,211,77,.85)" stroke-width="4" opacity=".7"/>
+            <polygon points="53,32 66,36 72,46 68,58 56,64 44,60 38,50 42,38" fill="#041f18"/>
+            <polygon points="55,38 64,41 67,48 63,55 55,58 47,55 44,48 48,41" fill="#020f0b"/>
+          </svg></div>
+        </div>
+        <div class="celface celfront celedge"><span class="celbtc"><svg viewBox="137 -1639 1439 1879" style="width:72%;height:72%;display:block"><g transform="scale(1,-1)"><path id="celMarkPath" fill="url(#sscMark)"/></g></svg></span></div>
+        <div class="celface celright celedge"></div>
+        <div class="celface celback celedge"></div>
+        <div class="celface celleft celedge"></div>
+        <div class="celface celbot celedge"></div>
+      </div></div>
+      <div class="celpick">&#x26CF;&#xFE0F;</div>
+    </div>
+    <div class="celmeta">height <b id="celH">-</b> &nbsp;&middot;&nbsp; solve diff <b id="celD">-</b> &nbsp;&middot;&nbsp; <span class="celproto" id="celP">SV2</span></div>
+  </div>
+  <div class="celdismiss">tap anywhere to close &middot; stays up for screenshots</div>
+</div>
+<script>
+function spark(t){
+  if(!t||!t.some(v=>v>0))return '';
+  const max=Math.max.apply(null,t)||1;
+  const pts=t.map((v,i)=>`${4+i*10},${17-Math.max(1,v/max*13)}`).join(' ');
+  return `<svg width="46" height="19" viewBox="0 0 46 19" style="vertical-align:middle;margin-right:6px;opacity:.8"><polyline points="${pts}" fill="none" stroke="var(--mint)" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+}
+function fmtDiff(n){
+  if(n==null||isNaN(n))return"—";
+  const u=[[1e18,"E"],[1e15,"P"],[1e12,"T"],[1e9,"G"],[1e6,"M"],[1e3,"K"]];
+  for(const[v,s]of u){if(n>=v)return(n/v).toFixed(n/v>=100?0:2)+s;}
+  return n.toFixed(0);
+}
+function ago(ts){
+  if(!ts)return"—";const s=Math.max(0,Math.floor(Date.now()/1000-ts));
+  if(s<60)return s+"s";if(s<3600)return Math.floor(s/60)+"m";
+  if(s<86400)return Math.floor(s/3600)+"h";return Math.floor(s/86400)+"d";
+}
+function fmtUp(s){
+  s=Math.max(0,Math.floor(s||0));
+  if(s<60)return s+"s";
+  const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);
+  if(d>0)return d+"d "+h+"h";
+  if(h>0)return h+"h "+m+"m";
+  return m+"m";
+}
+function strikeFrac(best,net){
+  if(!best||!net||best<=0||net<=0)return 0;
+  if(best>=net)return 1;
+  return Math.min(1,Math.max(0,Math.log10(best)/Math.log10(net)));
+}
+function render(d){
+  const sd=document.getElementById('statusDot'),st=document.getElementById('statusText');
+  window.__addr=d.address||'';
+  if(d.poolUp){sd.className='dot';st.textContent=d.nodeUp?'mining':'pool up · node down';}
+  else{sd.className='dot bad';st.textContent=(d.address?'pool offline':'set payout address');}
+  const ai=document.getElementById('addrInput');
+  if(ai&&document.activeElement!==ai&&d.address&&ai.value!==d.address)ai.value=d.address;
+  const uh=document.getElementById('userHint');
+  if(uh)uh.innerHTML=d.address?`<span style="color:var(--mint)">${d.address}</span>`:'your BCH address — <span style="color:var(--muted)">set it above</span>';
+  const frac=Math.min(1,Math.max((d.netDiff>0&&d.bestShare>0)?d.bestShare/d.netDiff:0,0.004));
+  document.getElementById('arc').style.strokeDashoffset=628*(1-frac);
+  const lin=(d.netDiff>0&&d.bestShare>0)?(d.bestShare/d.netDiff*100):0;
+  document.getElementById('strikePct').textContent=(lin>=1?lin.toFixed(1):lin>=0.01?lin.toFixed(3):lin>0?lin.toFixed(Math.min(12,Math.max(4,1-Math.floor(Math.log10(lin))))):'0')+'% of a block';
+  document.getElementById('bestShare').textContent=fmtDiff(d.bestShare);
+  loadDiff(d);
+  if(d.netDiff>0&&d.roundShares!=null){
+    const eff=d.roundShares/d.netDiff*100;
+    const el=document.getElementById('effortPct');
+    el.textContent=(eff>=100?eff.toFixed(0):eff>=1?eff.toFixed(1):eff.toFixed(3))+'%';
+    el.style.color=eff<100?'var(--mint)':eff<250?'#FCD34D':'#FB7185';
+    document.getElementById('effortBar').style.width=Math.min(100,eff)+'%';
+    document.getElementById('effortSub').textContent=fmtDiff(d.roundShares)+' shares this round vs '+fmtDiff(d.netDiff)+' difficulty';
+    if(d.poolHs>0){
+      const secs=d.netDiff*Math.pow(2,32)/d.poolHs;
+      const days=secs/86400;
+      document.getElementById('ttb').textContent='at current hashrate, a block every ~'+
+        (days>730?(days/365).toFixed(1)+' years':days>60?(days/30).toFixed(1)+' months':days.toFixed(1)+' days')+
+        ' on average \u2014 every share is a lottery ticket';
+    }
+  }
+  document.getElementById('netDiff').textContent=fmtDiff(d.netDiff);
+  document.getElementById('netDiff2').textContent=fmtDiff(d.netDiff);
+  document.getElementById('hashrate').firstChild.textContent=d.hashrate.val;
+  document.getElementById('hrUnit').textContent=d.hashrate.unit;elecHs=d.poolHs||0;elecDiff=d.netDiff||0;elecCalc();
+  document.getElementById('workers').textContent=d.workers;
+  document.getElementById('wkMeta').textContent=d.users+' address'+(d.users===1?'':'es');
+  document.getElementById('blocks').textContent=d.blocks;
+  document.getElementById('shares').textContent=fmtDiff(d.accepted);
+  document.getElementById('shMeta').textContent=fmtDiff(d.accepted)+' acc / '+(d.rejected||0)+' rej';
+  document.getElementById('stratum').textContent=d.stratum;
+  document.getElementById('nodeDot').className='dot'+(d.nodeUp?'':' bad');
+  if(d.sv2)renderSv2Status(d.sv2);
+  document.getElementById('height').textContent=d.height?d.height.toLocaleString():'—';
+  if(d.version)document.getElementById('ver').textContent=d.version;
+  const t=document.getElementById('workersTable');
+  t.querySelectorAll('.wr').forEach(e=>e.remove());
+  const emp=document.getElementById('workersEmpty');
+  if(d.workerList&&d.workerList.length){
+    emp.style.display='none';
+    d.workerList.forEach(w=>{
+      const r=document.createElement('div');r.className='wr';
+      r.innerHTML=`<div class="name"><span class="wn">${w.idle?'<span style="color:#FB7185;margin-right:4px" title="no shares in 5+ min">\u25CF</span>':''}<span class="wnn" title="${w.name}">${w.name}</span>${w.conns>1?` <span style=\"font-size:9px;color:var(--dim)\">${w.conns} conns</span>`:''}${w.proto==='SV2'&&w.declared===0?' <span title=\"miner declares 0 hashrate - vardiff cannot engage\" style=\"font-size:9px;color:#FB7185\">decl:0</span>':''}${(typeof w.accepted==='number'||typeof w.rejected==='number')?` <span style=\"font-size:9px;color:var(--dim)\" title=\"accepted / rejected shares since this miner was last reset\">${typeof w.accepted==='number'?fmtDiff(w.accepted):'—'}<span style=\"opacity:.6\">a</span> / ${typeof w.rejected==='number'?w.rejected:'—'}<span style=\"opacity:.6\">r</span></span>`:''}${w.proto==='SV2'?' <span style=\"font-size:9px;color:var(--mint);border:1px solid var(--line2);border-radius:3px;padding:1px 4px;vertical-align:middle\">SV2</span>':''}</span><span class="wup">up ${fmtUp(w.uptime)}</span></div><div class="hr wcol-r">${spark(w.trend)}${w.hashrate}</div><div class="bd wcol-r bd-col">${fmtDiff(w.best)}</div><div class="ls">${ago(w.last)}</div><div style="display:flex;gap:4px;justify-content:flex-end"><button class="wreset" data-w="${w.name}" title="reset this miner's best">⟲</button><button class="wreset whide" data-h="${w.name}" title="remove from list">✕</button></div>`;
+      t.appendChild(r);
+    });
+  }else{emp.style.display='block';}
+  try{celebCheck(d.blockList)}catch(_){}
+  const bt=document.getElementById('blocksTable');
+  bt.querySelectorAll('.wr').forEach(e=>e.remove());
+  const bemp=document.getElementById('blocksEmpty');
+  if(d.blockList&&d.blockList.length){
+    bemp.style.display='none';
+    document.getElementById('blocks').textContent=d.blockList.length;
+    d.blockList.slice(0,blocksShown).forEach(b=>{
+      const r=document.createElement('div');r.className='wr';
+      r.style.gridTemplateColumns='1fr 1fr .8fr .9fr 1.5fr';
+      const short=b.hash?b.hash.slice(0,8)+'\u2026'+b.hash.slice(-6):'\u2014';
+      const eff=(b.effort!=null)?((b.effort>=100?b.effort.toFixed(0):b.effort.toFixed(1))+'%'):'\u2014';
+      const effCol=(b.effort==null)?'var(--muted)':(b.effort<100?'var(--mint)':b.effort<250?'#FCD34D':'#FB7185');
+      r.innerHTML=`<div class="bd">${b.height.toLocaleString()}<span style="display:block;color:var(--muted);font-size:11px;font-weight:400;margin-top:2px">${b.external?'<span style="opacity:.55">external</span>':(b.worker||'\u2014')}</span></div><div class="ls wcol-r">${ago(b.time)} ago</div><div class="wcol-r" style="color:${effCol};font-family:var(--fm)">${eff}</div><div class="hr wcol-r">${fmtDiff(b.best)}</div><div class="wcol-r"><a href="https://blockchair.com/bitcoin-cash/block/${b.hash}" target="_blank" rel="noopener" style="color:var(--mint);text-decoration:none;font-family:var(--fm)">${short}</a></div>`;
+      bt.appendChild(r);
+    });
+  }else{bemp.style.display='block';}
+  var _bm=document.getElementById('blocksMore'); if(_bm){ if(d.blockList&&d.blockList.length>blocksShown){_bm.style.display='block';_bm.querySelector('button').textContent='Show more ('+(d.blockList.length-blocksShown)+' more)';} else {_bm.style.display='none';} }
+}
+const COPY={pass:'x'};
+function copyText(txt){
+  if(navigator.clipboard&&window.isSecureContext){return navigator.clipboard.writeText(txt);}
+  return new Promise(function(res,rej){
+    var ta=document.createElement("textarea");
+    ta.value=txt; ta.setAttribute("readonly","");
+    ta.style.position="fixed"; ta.style.left="-9999px"; ta.style.top="0"; ta.style.opacity="0";
+    document.body.appendChild(ta);
+    ta.focus(); ta.select(); ta.setSelectionRange(0, txt.length);
+    var ok=false; try{ok=document.execCommand("copy");}catch(e){}
+    document.body.removeChild(ta);
+    ok?res():rej(new Error("copy failed"));
+  });
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.copy');if(!b)return;
+  const key=b.dataset.c;
+  let txt;
+  if(key==='stratum')txt=document.getElementById('stratum').textContent;
+  else if(key==='user')txt=window.__addr||'';
+  else if(key==='sv2url')txt=document.getElementById('sv2url').textContent;
+  else if(key==='sv2pub')txt=document.getElementById('sv2pub').textContent;
+  else txt=COPY[key]||'';
+  if(!txt)return;
+  copyText(txt).catch(()=>{});
+  const o=b.textContent;b.textContent='Copied';setTimeout(()=>b.textContent=o,1200);
+});
+function loadSv2(){
+  fetch('/api/sv2').then(r=>r.json()).then(d=>{
+    const u=document.getElementById('sv2url'),p=document.getElementById('sv2pub'),
+          ai=document.getElementById('sv2AddrInput');
+    u.textContent=d.enabled?('stratum2+tcp://'+d.endpoint):'\u2014';
+    const spmEl=document.getElementById('sv2SpmInput');
+    if(spmEl&&document.activeElement!==spmEl){
+      spmEl.value=d.savedSpm||6;
+      spmEl.title='target shares/min per miner (vardiff)';
+      const xnEl=document.getElementById('sv2XnInput');
+      // A real value, not a placeholder hint. The hint always read 16 whatever
+      // the pool was really running, so the field could be written and never
+      // read back -- you could not see your own setting.
+      if(d.savedXn && document.activeElement!==xnEl) xnEl.value=d.savedXn;
+      const ttlEl=document.getElementById('sv2TtlInput');
+      if(d.workerTtlMin && document.activeElement!==ttlEl) ttlEl.value=d.workerTtlMin;
+      const pend=[];
+      if(d.activeSpm && d.savedSpm && d.activeSpm!==d.savedSpm)
+        pend.push('Shares/min: saved '+d.savedSpm+', pool is running '+d.activeSpm+'.');
+      if(d.activeXn && d.savedXn && d.activeXn!==d.savedXn)
+        pend.push('Extranonce2: saved '+d.savedXn+', pool is running '+d.activeXn+
+                  '. Miners asking for more than '+d.activeXn+' will be refused.');
+      const pb=document.getElementById('sv2Pending');
+      if(pend.length){ pb.style.display='block'; pb.textContent=pend.join(' ')+' Restart the app to apply.'; }
+      else pb.style.display='none';
+    }
+    p.textContent=d.authorityPub||'\u2014 generated on first enable';
+    renderSv2Status(d.enabled?{enabled:true}:{enabled:false});
+    if(ai&&document.activeElement!==ai&&d.address&&ai.value!==d.address)ai.value=d.address;
+  }).catch(()=>{});
+}
+function renderSv2Status(s){
+  const st=document.getElementById('sv2status'),dot=document.getElementById('sv2dot');
+  if(!st||!dot)return;
+  if(!s||!s.enabled){st.textContent='disabled';dot.className='dot bad';return;}
+  if(s.workers>0){st.textContent='enabled \u00b7 '+s.workers+' miner'+(s.workers>1?'s':'')+' \u00b7 '+(s.hashrate||'');dot.className='dot';}
+  else{st.textContent='enabled \u00b7 waiting for miners';dot.className='dot';}
+}
+async function saveSv2(){
+  const ai=document.getElementById('sv2AddrInput'),msg=document.getElementById('sv2Msg');
+  const a=ai.value.trim();
+  try{
+    const r=await fetch('/api/sv2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:a,sharesPerMinute:parseFloat(document.getElementById('sv2SpmInput').value)||undefined,extranonce2Bytes:parseInt(document.getElementById('sv2XnInput').value,10)||undefined,workerTtlMin:parseInt(document.getElementById('sv2TtlInput').value,10)||undefined})});
+    const j=await r.json();
+    if(j.ok){msg.style.color='var(--mint)';msg.textContent=j.enabled?'SV2 enabled \u2014 endpoint live in ~10s':'SV2 disabled (restart the app to stop the pool)';loadSv2();}
+    else{msg.style.color='var(--red)';msg.textContent=j.error||'invalid address';}
+  }catch(e){msg.style.color='var(--red)';msg.textContent='could not save';}
+}
+document.getElementById('sv2Save').addEventListener('click',saveSv2);
+loadSv2();setInterval(loadSv2,15000);
+async function saveAddr(){
+  const ai=document.getElementById('addrInput'),msg=document.getElementById('addrMsg');
+  const a=(ai.value||'').trim();
+  if(!a){msg.style.color='var(--red)';msg.textContent='enter an address';return;}
+  msg.style.color='var(--muted)';msg.textContent='saving…';
+  try{
+    const r=await fetch('/api/address',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:a})});
+    const j=await r.json();
+    if(j.ok){msg.style.color='var(--mint)';msg.textContent='saved — pool restarting (~10s)…';}
+    else{msg.style.color='var(--red)';msg.textContent=j.error||'invalid address';}
+  }catch{msg.style.color='var(--red)';msg.textContent='could not save';}
+}
+async function doReset(scope,btn){
+  if(btn.dataset.arm!=='1'){btn.dataset.arm='1';const o=btn.textContent;btn.textContent='Sure?';btn.style.color='var(--red)';
+    setTimeout(()=>{btn.dataset.arm='';btn.textContent=o;btn.style.color='';},2500);return;}
+  btn.dataset.arm='';
+  try{await fetch('/api/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope})});
+    btn.textContent='Resetting…';setTimeout(tick,8000);}catch{}
+}
+document.getElementById('resetAll').addEventListener('click',e=>doReset('all',e.target));
+(function(){var t=document.getElementById('logSharesToggle');if(!t)return;fetch('/api/logshares').then(function(r){return r.json();}).then(function(d){t.checked=!!d.on;}).catch(function(){});t.addEventListener('change',function(){fetch('/api/logshares',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({on:t.checked})}).catch(function(){});});})();
+var elecHs=0, elecDiff=0;
+function elecCalc(){
+  var rt=document.getElementById('elRate'), wt=document.getElementById('elWatts');
+  if(!rt||!wt) return;
+  var rate=parseFloat(rt.value)||0, W=parseFloat(wt.value)||0, dc=W/1000*24*rate;
+  function m(n){return '$'+(n<10?n.toFixed(2):n.toFixed(0));}
+  document.getElementById('elDay').textContent=dc>0?m(dc):'\u2014';
+  document.getElementById('elWk').textContent=dc>0?m(dc*7):'\u2014';
+  document.getElementById('elMo').textContent=dc>0?m(dc*30.44):'\u2014';
+  var b=document.getElementById('elBlock');
+  if(dc>0&&elecHs>0&&elecDiff>0){
+    var days=elecDiff*Math.pow(2,32)/elecHs/86400;
+    b.innerHTML='Avg-luck energy cost to find one block: <b style="color:var(--mint)">'+m(dc*days)+'</b><br><span style="color:var(--dim)">~'+(days<730?days.toFixed(0)+' days':(days/365).toFixed(1)+' yr')+' at this hashrate \u00b7 solo variance is enormous</span>';
+  } else if(dc>0){ b.innerHTML='<span style="color:var(--dim)">block estimate appears once the pool reports hashrate</span>'; }
+  else { b.textContent='enter your rate and rig watts above'; }
+}
+(function(){
+  var rt=document.getElementById('elRate'), wt=document.getElementById('elWatts');
+  var hd=document.getElementById('elecHead'), bd=document.getElementById('elecBody'), cv=document.getElementById('elecChev');
+  if(!rt||!wt||!hd) return;
+  bd.style.display='none'; cv.style.transform='rotate(-90deg)';
+  hd.addEventListener('click',function(){var open=bd.style.display!=='none';bd.style.display=open?'none':'block';cv.style.transform=open?'rotate(-90deg)':'none';});
+  fetch('/api/electricity').then(function(r){return r.json();}).then(function(d){if(d.rate!=null)rt.value=d.rate;if(d.watts!=null)wt.value=d.watts;elecCalc();}).catch(function(){});
+  function save(){fetch('/api/electricity',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rate:parseFloat(rt.value)||0,watts:parseFloat(wt.value)||0})}).catch(function(){});}
+  [rt,wt].forEach(function(el){el.addEventListener('input',elecCalc);el.addEventListener('change',save);});
+})();
+let diffLoaded=false;
+function loadDiff(d){
+  if(diffLoaded||!d.diff)return;
+  document.getElementById('diffMin').value=d.diff.min;
+  document.getElementById('diffStart').value=d.diff.start;
+  document.getElementById('diffMax').value=d.diff.max;
+  diffLoaded=true;
+}
+document.getElementById('diffSave').addEventListener('click',async e=>{
+  const btn=e.target,body={min:+document.getElementById('diffMin').value||1,
+    start:+document.getElementById('diffStart').value||42,max:+document.getElementById('diffMax').value||0};
+  btn.textContent='Saving…';
+  try{await fetch('/api/diff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    btn.textContent='Saved ✓';}catch(_){btn.textContent='Failed';}
+  setTimeout(()=>btn.textContent='Save',1800);
+});
+document.getElementById('workersTable').addEventListener('click',async e=>{
+  const h=e.target.closest('.whide');
+  if(h){
+    if(h.dataset.arm!=='1'){h.dataset.arm='1';h.textContent='?';h.style.color='var(--red)';
+      setTimeout(()=>{h.dataset.arm='';h.textContent='✕';h.style.color='';},2500);return;}
+    h.dataset.arm='';
+    try{await fetch('/api/worker/hide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:h.dataset.h})});setTimeout(tick,600);}catch(_){}
+    return;
+  }
+  const b=e.target.closest('.wreset');if(b)doReset(b.dataset.w,b);
+});
+document.getElementById('addrSave').addEventListener('click',saveAddr);
+document.getElementById('addrInput').addEventListener('keydown',e=>{if(e.key==='Enter')saveAddr();});
+const MOCK={poolUp:true,nodeUp:true,bestShare:4.1e6,netDiff:5.75e11,
+  hashrate:{val:'92.4',unit:'TH/s'},workers:3,users:1,blocks:0,accepted:18420,rejected:12,
+  stratum:'stratum+tcp://umbrel.local:3335',height:954112,version:'v1.4.48',address:'bitcoincash:qq8e2x9f0n3l7k2m5p4r6t8w1y3u5i7o9a2s4d6f8g',blockList:[],diff:{min:1,start:42,max:0},roundShares:1.64e9,poolHs:8.66e12,
+  workerList:[
+    {name:'S21XP-board1',hashrate:'90.1 TH/s',best:4.1e6,last:Math.floor(Date.now()/1000)-4,uptime:9240},
+    {name:'NerdQAxe++',hashrate:'1.9 TH/s',best:88200,last:Math.floor(Date.now()/1000)-11,uptime:300},
+    {name:'bitaxe-gamma',hashrate:'1.2 TH/s',best:42100,last:Math.floor(Date.now()/1000)-2,uptime:62},
+  ]};
+async function tick(){
+  try{const r=await fetch('/api/status');if(!r.ok)throw 0;render(await r.json());}
+  catch{render(MOCK);}
+}
+var blocksShown=25;
+var _bmb=document.getElementById('blocksMore'); if(_bmb){var _bb=_bmb.querySelector('button'); if(_bb)_bb.addEventListener('click',function(){blocksShown+=25;tick();});}
+tick();setInterval(tick,5000);
+
+/* ================= block-found celebration ================= */
+/* CELEB-GUARD-BEGIN */
+let celebSeen=null;
+function celebKey(b){return (b&&b.hash)?b.hash:('h'+(b&&b.height));}
+function celebOn(){try{return localStorage.getItem('celebOff')!=='1';}catch(_){return true;}}
+function celebCheck(list){
+  if(!Array.isArray(list))return;
+  if(celebSeen===null){
+    // seed on first poll -- but a block younger than 90s falls through and
+    // fires: a page refresh moments after a solve must not eat the party
+    var nowS=Math.floor(Date.now()/1000);
+    celebSeen=new Set(list.filter(function(b){return nowS-(b.time||0)>=90;}).map(celebKey));
+  }
+  let newest=null;
+  for(const b of list){
+    if(b.external){celebSeen.add(celebKey(b));continue;} // paid us, solved elsewhere: no party
+    const k=celebKey(b);
+    if(!celebSeen.has(k)){celebSeen.add(k);if(!newest||(b.height||0)>(newest.height||0))newest=b;}
+  }
+  if(newest&&celebOn())celebFire(newest);
+}
+/* CELEB-GUARD-END */
+
+const celfx=document.getElementById('celfx');
+const celcv=document.getElementById('celcv');
+const celctx=celcv?celcv.getContext('2d'):null;
+const celflash=document.getElementById('celflash');
+let celRaf=null,celBills=[],celT0=0,celLast=0,celEmit=0,celStorm=false,celHX=0,celHY=0;
+let celStormTo=null,celImpactTo=null,celEndTo=null;
+// the actual brand mark, taken from the header logo so a restyle follows through
+const celMarkD=(function(){var el=document.querySelector('svg.logo path[fill="url(#sscMark)"]');return el?el.getAttribute('d'):null;})();
+(function(){var el=document.getElementById('celMarkPath');if(el&&celMarkD)el.setAttribute('d',celMarkD);})();
+const celMark=(celMarkD&&window.Path2D)?new Path2D(celMarkD):null;
+function celSize(){celcv.width=innerWidth*devicePixelRatio;celcv.height=innerHeight*devicePixelRatio;celctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);}
+function celLocate(){var tf=celfx.querySelector('.celtop');var r=tf.getBoundingClientRect();celHX=r.left+r.width*0.52;celHY=r.top+r.height*0.42;}
+function celBill(x,y,vx,vy){return {x:x,y:y,vx:vx,vy:vy,w:34+Math.random()*10,h:16+Math.random()*4,flip:Math.random()*6,vflip:(Math.random()-.5)*.28,spin:Math.random()*6,vspin:(Math.random()-.5)*.12,sway:Math.random()*6,life:1};}
+function celGeyser(n,power,spread){for(let i=0;i<n;i++){const a=-Math.PI/2+(Math.random()-.5)*spread;const sp=power*(.55+Math.random()*.8);celBills.push(celBill(celHX+(Math.random()-.5)*16,celHY,Math.cos(a)*sp,Math.sin(a)*sp));}}
+function celSpill(n){for(let i=0;i<n;i++){const dir=Math.random()<.5?-1:1;celBills.push(celBill(celHX+dir*(10+Math.random()*10),celHY+2,dir*(0.6+Math.random()*1.4),-(0.5+Math.random()*1.2)));}}
+function celDrawMark(size,color){if(!celMark)return;const sc=size/1879;celctx.save();celctx.scale(sc,-sc);celctx.translate(-856,-700);celctx.fillStyle=color;celctx.fill(celMark);celctx.restore();}
+function celDrawBill(b){
+  const cat=Math.abs(Math.cos(b.flip));const h=b.h*(0.25+0.75*cat);const sh=0.55+0.45*cat;
+  celctx.save();celctx.translate(b.x,b.y);celctx.rotate(b.spin);celctx.globalAlpha=Math.max(0,Math.min(1,b.life));
+  const g=celctx.createLinearGradient(-b.w/2,0,b.w/2,0);
+  g.addColorStop(0,'rgba('+(16*sh|0)+','+(120*sh|0)+','+(90*sh|0)+',1)');
+  g.addColorStop(.5,'rgba('+(52*sh|0)+','+(211*sh|0)+','+(153*sh|0)+',1)');
+  g.addColorStop(1,'rgba('+(16*sh|0)+','+(120*sh|0)+','+(90*sh|0)+',1)');
+  celctx.fillStyle=g;celctx.beginPath();celctx.roundRect(-b.w/2,-h/2,b.w,h,2.5);celctx.fill();
+  celctx.strokeStyle='rgba(230,255,245,'+(.55*cat)+')';celctx.lineWidth=1;
+  celctx.beginPath();celctx.roundRect(-b.w/2+3,-h/2+2,b.w-6,h-4,2);celctx.stroke();
+  if(cat>.35){celctx.globalAlpha=Math.max(0,b.life)*(cat-.2);celctx.fillStyle='rgba(6,30,20,.9)';
+    celctx.beginPath();celctx.ellipse(0,0,h*.34,h*.34,0,0,7);celctx.fill();
+    celDrawMark(h*.52,'#34D399');}
+  celctx.restore();
+}
+function celFrame(ts){
+  if(!celT0){celT0=ts;celLast=ts;}const dt=Math.min(34,ts-celLast);celLast=ts;
+  celctx.clearRect(0,0,celcv.width,celcv.height);const H=innerHeight,k=dt/16;
+  for(const b of celBills){
+    b.vx*=Math.pow(0.97,k);b.vy+=0.13*k;b.vy*=Math.pow(0.985,k);b.sway+=0.06*k;
+    b.x+=(b.vx+Math.sin(b.sway)*1.1)*k;b.y+=b.vy*k;b.flip+=b.vflip*k;b.spin+=b.vspin*k;
+    if(b.y>H+30)b.life-=0.04*k;celDrawBill(b);
+  }
+  celBills=celBills.filter(function(b){return b.life>0&&b.y<H+60;});
+  if(celStorm){celEmit+=dt;if(celEmit>34){celEmit=0;celLocate();celGeyser(4,12,0.5);if(Math.random()<.5)celSpill(1);}}
+  celRaf=requestAnimationFrame(celFrame);
+}
+function celImpact(){
+  celfx.classList.add('struck');
+  celflash.style.transition='none';celflash.style.background='rgba(52,211,153,.55)';
+  requestAnimationFrame(function(){celflash.style.transition='background .45s';celflash.style.background='rgba(52,211,153,0)';});
+  celLocate();celGeyser(70,15,0.55);celSpill(6);celStorm=true;
+  celStormTo=setTimeout(function(){celStorm=false;},2300);
+}
+function celebFire(b){
+  if(!celfx||!celctx)return;
+  const proto=(b.worker==='SV2')?'SV2':'SV1';
+  document.getElementById('celP').textContent=proto;
+  document.getElementById('celkick').textContent=(proto==='SV2'?'Stratum V2':'Stratum V1')+' \u00b7 solo';
+  document.getElementById('celH').textContent=(b.height||0).toLocaleString();
+  const sd=b.solveDiff||b.best||0;
+  document.getElementById('celD').textContent=sd?fmtDiff(sd):'\u2014';
+  celSize();celBills=[];celT0=0;celLast=0;celEmit=0;celStorm=false;
+  celfx.classList.remove('struck');void celfx.offsetWidth;
+  celfx.classList.add('on');
+  cancelAnimationFrame(celRaf);celRaf=requestAnimationFrame(celFrame);
+  clearTimeout(celImpactTo);celImpactTo=setTimeout(celImpact,620);
+  clearTimeout(celEndTo);celEndTo=setTimeout(celStop,60000);  // stays up for screenshots; safety-close for unattended displays
+}
+function celStop(){celfx.classList.remove('on','struck');cancelAnimationFrame(celRaf);celRaf=null;celBills=[];celStorm=false;
+  clearTimeout(celStormTo);clearTimeout(celImpactTo);clearTimeout(celEndTo);}
+if(celfx){celfx.addEventListener('click',celStop);addEventListener('resize',function(){if(celfx.classList.contains('on'))celSize();});}
+(function(){
+  var t=document.getElementById('celebToggle');
+  if(t){t.checked=celebOn();t.addEventListener('change',function(){try{localStorage.setItem('celebOff',t.checked?'0':'1');}catch(_){}});}
+  var pv=document.getElementById('celebPreview');
+  if(pv){pv.addEventListener('click',function(e){e.preventDefault();celebFire({height:960133,solveDiff:88416,worker:'SV2',hash:'preview'});});}
+})();
+</script>
+
+</body>
+</html>
