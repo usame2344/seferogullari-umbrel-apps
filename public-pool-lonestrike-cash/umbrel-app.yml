@@ -1,5 +1,5 @@
 manifestVersion: 1
-id: lonestrike-cash-local
+id: public-pool-lonestrike-cash
 category: bitcoin
 name: LoneStrike Cash Local
 version: "1.4.71-local.1"

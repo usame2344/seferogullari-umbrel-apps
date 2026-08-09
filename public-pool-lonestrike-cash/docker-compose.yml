@@ -1,7 +1,7 @@
 services:
   app_proxy:
     environment:
-      APP_HOST: lonestrike-cash-local_dashboard_1
+      APP_HOST: public-pool-lonestrike-cash_dashboard_1
       APP_PORT: 3000
 
   pool:
