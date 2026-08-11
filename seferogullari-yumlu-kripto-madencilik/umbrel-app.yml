@@ -3,6 +3,7 @@ id: seferogullari-yumlu-kripto-madencilik
 category: bitcoin
 name: YUMLU KRİPTO MADENCİLİK
 version: "0.1.1"
+icon: "https://raw.githubusercontent.com/usame2344/seferogullari-umbrel-apps/main/seferogullari-yumlu-kripto-madencilik/icon.svg"
 tagline: Kişisel Bitcoin solo mining havuzu
 description: >-
   YUMLU KRİPTO MADENCİLİK, Umbrel Bitcoin Node ile çalışan
