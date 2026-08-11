@@ -11,7 +11,7 @@ import psycopg2
 import psycopg2.extras
 
 HOST = "0.0.0.0"
-PORT = 8095
+PORT = int(os.environ.get("DASHBOARD_PORT", "8095"))
 
 DB_HOST = os.environ.get("DB_HOST", "127.0.0.1")
 DB_PORT = int(os.environ.get("DB_PORT", "5433"))
@@ -19,10 +19,14 @@ DB_NAME = os.environ.get("DB_NAME", "mkpool")
 DB_USER = os.environ.get("DB_USER", "mkpool_user")
 DB_PASS = os.environ.get("DB_PASS", "")
 
-MKPOOL_CTL = os.path.expanduser(
-    "~/mkpool-build/mkpool/scripts/mkpool-ctl.py"
+MKPOOL_CTL = os.environ.get(
+    "MKPOOL_CTL",
+    "/opt/yumlu/mkpool-src/scripts/mkpool-ctl.py"
 )
-MKPOOL_SOCKET = "/tmp/yumlubtc-mkpool.sock"
+MKPOOL_SOCKET = os.environ.get(
+    "MKPOOL_SOCKET",
+    "/run/mkpool/mkpool.sock"
+)
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 

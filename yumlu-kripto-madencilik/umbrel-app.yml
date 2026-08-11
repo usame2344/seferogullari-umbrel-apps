@@ -1,0 +1,32 @@
+manifestVersion: "1.0.0"
+id: yumlu-kripto-madencilik
+category: bitcoin
+name: YUMLU KRİPTO MADENCİLİK
+version: "0.1.0"
+tagline: Kişisel Bitcoin solo mining havuzu
+description: >-
+  YUMLU KRİPTO MADENCİLİK, Umbrel Bitcoin Node ile çalışan
+  kişisel Bitcoin solo mining havuzudur. mkpool v0.3.0 tabanlı
+  Stratum V1 sunucusu, vardiff, share ve best difficulty takibi,
+  TimescaleDB kayıtları ve özel madencilik dashboardu içerir.
+
+  ASIC madenciler TCP 3333 portuna bağlanır. Solo mining modunda
+  Stratum kullanıcı adı olarak Bitcoin ödeme adresi kullanılır.
+
+  Dashboard üzerinde pool hashrate, aktif worker sayısı,
+  best share, bulunan blok sayısı, hashrate geçmişi,
+  worker bilgileri ve bulunan bloklar görüntülenir.
+releaseNotes: ""
+developer: YUMLU KRİPTO MADENCİLİK
+website: https://github.com/usame2344/seferogullari-umbrel-apps
+dependencies:
+  - bitcoin
+repo: https://github.com/usame2344/seferogullari-umbrel-apps
+support: https://github.com/usame2344/seferogullari-umbrel-apps/issues
+port: 8095
+gallery: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+submitter: usame2344
+submission: https://github.com/usame2344/seferogullari-umbrel-apps

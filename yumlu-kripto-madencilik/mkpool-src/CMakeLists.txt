@@ -78,11 +78,15 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release"
         -D_GLIBCXX_ASSERTIONS            # libstdc++ bounds checks on operator[] etc.
         -fstack-protector-strong         # stack canaries on functions with arrays / addr-taken locals
         -fstack-clash-protection         # probe pages when growing stack > 4K
-        -fcf-protection=full             # x86 IBT/SHSTK (CET); no-op on non-CET CPUs
         -ftrivial-auto-var-init=zero     # zero-init uninit stack vars (defeats info-leak primitives)
         -fno-delete-null-pointer-checks  # don't optimize away null-ptr UB checks
         -fno-strict-overflow             # wrap on signed overflow instead of UB-optimizing
     )
+    # Intel/AMD CET control-flow protection is not supported by GCC on ARM64.
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64|i[3-6]86)$")
+        add_compile_options(-fcf-protection=full)
+    endif()
+
     add_link_options(
         # --- size/perf ---
         -Wl,--gc-sections                # drop unused sections (smaller binary, better TLB)
