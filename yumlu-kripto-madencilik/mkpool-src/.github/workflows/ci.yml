@@ -1,0 +1,172 @@
+name: CI
+
+# Build + test gate. Complements fuzz.yml: fuzzing guards the wire surface,
+# this guards everything else (merkle, vardiff, address, db_worker, framing) and
+# answers the more basic question of whether the project still compiles.
+#
+# WHY A CONTAINER, NOT ubuntu-latest
+# ----------------------------------
+# ubuntu-latest is 24.04 and cannot build this project. Three independent
+# reasons, each of which broke CI in turn:
+#
+#   1. pch.hpp includes <print>, which landed in GCC 14.1. 24.04 ships GCC 13.
+#   2. sv2_noise.cpp needs secp256k1_ellswift.h. 24.04's libsecp256k1 predates
+#      the ellswift module and does not ship the header.
+#   3. 24.04's libpqxx headers declare exception ctors taking
+#      std::source_location that its own .so does not export, so every link
+#      dies in undefined references.
+#
+# Production runs Ubuntu 26.04, whose stock packages provide all three (GCC 15
+# with <print>, libsecp256k1 0.7.0 with ellswift, libpqxx 7.10 with a consistent
+# ABI). Building in that image is both simpler than working around 24.04 and a
+# truer test: CI exercises the same distro and library versions the pools link,
+# with the stock compiler and no version pinning.
+#
+# If the deployment target changes, change the container tag. That single line
+# is what pins the ABI.
+#
+# COST NOTE: Actions minutes are billed on private repos, so this runs monthly
+# rather than per push/PR. Use workflow_dispatch on demand before a deploy --
+# that is when it earns its keep. The public mirror runs on push/PR, free.
+
+on:
+  schedule:
+    # 04:00 on the 1st of each month, an hour before the fuzz cron so the two
+    # never contend for a runner.
+    - cron: '0 4 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Plain Release build + full suite. The boring gate that catches the most:
+  # "does it still compile, do the tests still pass".
+  # ---------------------------------------------------------------------------
+  build-and-test:
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    steps:
+      # git must exist BEFORE checkout or actions/checkout falls back to a REST
+      # tarball. Cannot live in the composite action: that action is in the repo,
+      # which does not exist yet.
+      - name: Bootstrap container
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-toolchain
+
+      - name: Configure
+        # MKPOOL_NATIVE=OFF: -march=native on a shared runner tunes the binary to
+        # whatever CPU we landed on. Irrelevant for a test run, and a portability
+        # hazard if the artifact ever escapes.
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DMKPOOL_BUILD_TESTS=ON \
+            -DMKPOOL_NATIVE=OFF
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      # Runs the binary directly, before ctest touches it. If it cannot start,
+      # this says why -- exit status, loader errors, ldd -- instead of the cause
+      # being swallowed by Catch2's discovery machinery.
+      - name: Smoke-test the test binary
+        run: |
+          BIN=./build/tests/mkpool_tests
+          set +e
+          "$BIN" --list-reporters > /dev/null 2>/tmp/smoke.err
+          RC=$?
+          set -e
+          if [ $RC -ne 0 ]; then
+            echo "FAIL: test binary will not run (exit $RC)"
+            echo "--- stderr:"; cat /tmp/smoke.err
+            echo "--- ldd (missing libs?):"
+            ldd "$BIN" 2>&1 | grep -E 'not found' || echo "  (all resolved)"
+            # A bare "double free"/"corruption" message says nothing about where.
+            # Get a stack so the next failure is diagnosable instead of a guess.
+            if command -v gdb >/dev/null 2>&1; then
+              echo "--- backtrace:"
+              gdb -batch -ex run -ex 'bt 15' --args "$BIN" --list-reporters 2>&1 | tail -25
+            fi
+            exit $RC
+          fi
+          echo "OK: test binary runs"
+
+      - name: Test
+        # ctest exits 0 when it discovers ZERO tests, so assert the count first;
+        # a silently-empty suite is a green light that checks nothing.
+        run: |
+          COUNT=$(ctest --test-dir build -N | tail -1 | grep -oE '[0-9]+$')
+          echo "discovered $COUNT tests"
+          [ "${COUNT:-0}" -ge 50 ] || { echo "FAIL: expected >=50 tests, found $COUNT"; exit 1; }
+          ctest --test-dir build --output-on-failure
+
+  # ---------------------------------------------------------------------------
+  # ASan + UBSan. Catches the memory-corruption class that caused the 2026-07-15
+  # outage. LTO off: it fights the sanitizers and buys nothing for a test run.
+  # ---------------------------------------------------------------------------
+  sanitizers:
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    steps:
+      - name: Bootstrap container
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-toolchain
+
+      - name: Configure (ASan + UBSan)
+        run: |
+          cmake -S . -B build-asan -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DMKPOOL_BUILD_TESTS=ON \
+            -DMKPOOL_ENABLE_ASAN=ON \
+            -DMKPOOL_ENABLE_UBSAN=ON \
+            -DMKPOOL_ENABLE_LTO=OFF \
+            -DMKPOOL_NATIVE=OFF
+
+      - name: Build
+        run: cmake --build build-asan -j$(nproc)
+
+      - name: Test under ASan + UBSan
+        # UBSan defaults to warning; make it fail or the job is decorative.
+        env:
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+          ASAN_OPTIONS: detect_leaks=1
+          # libpqxx leaks in its own static initialisers (see .github/lsan.supp).
+          # Suppress that one library rather than turning leak detection off.
+          LSAN_OPTIONS: suppressions=${{ github.workspace }}/.github/lsan.supp:print_suppressions=1
+        run: ./build-asan/tests/mkpool_tests
+
+  # ---------------------------------------------------------------------------
+  # ThreadSanitizer. Separate job because TSan and ASan cannot coexist in one
+  # binary. This is where tests/test_concurrency_stress.cpp earns its keep --
+  # without TSan those tests only prove "no crash on this scheduling", which is
+  # close to worthless for races.
+  # ---------------------------------------------------------------------------
+  thread-sanitizer:
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    steps:
+      - name: Bootstrap container
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-toolchain
+
+      - name: Configure (TSan)
+        run: |
+          cmake -S . -B build-tsan -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DMKPOOL_BUILD_TESTS=ON \
+            -DMKPOOL_ENABLE_TSAN=ON \
+            -DMKPOOL_ENABLE_LTO=OFF \
+            -DMKPOOL_NATIVE=OFF
+
+      - name: Build
+        run: cmake --build build-tsan -j$(nproc)
+
+      - name: Test under TSan
+        env:
+          TSAN_OPTIONS: halt_on_error=1:second_deadlock_stack=1
+        run: ./build-tsan/tests/mkpool_tests

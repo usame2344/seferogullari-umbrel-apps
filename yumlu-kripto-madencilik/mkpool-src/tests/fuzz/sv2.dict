@@ -1,0 +1,41 @@
+# libFuzzer dictionary for the Stratum V2 wire format.
+# Gives the fuzzer the structural tokens it would otherwise waste millions of
+# executions rediscovering: valid message types, and the length encodings that
+# sit either side of the MAX_MSG_LENGTH boundary.
+#
+# Usage: -dict=tests/fuzz/sv2.dict
+
+# --- client -> server message types (the reachable surface) ---
+msg_setup_connection="\x00"
+msg_open_standard_channel="\x10"
+msg_open_extended_channel="\x13"
+msg_update_channel="\x16"
+msg_close_channel="\x18"
+msg_submit_shares_standard="\x1a"
+msg_submit_shares_extended="\x1b"
+msg_set_custom_mining_job="\x22"
+
+# --- extension_type values ---
+ext_none="\x00\x00"
+ext_channel_bit="\x00\x80"
+
+# --- u24 msg_length encodings (little-endian) around the 65519 bound ---
+# The exact value used in the 2026-07-15 attack (200000).
+len_attack_200000="\x40\x0d\x03"
+# MAX_MSG_LENGTH itself (65519) and its neighbours: the off-by-one zone.
+len_max_65519="\xef\xff\x00"
+len_max_plus_one_65520="\xf0\xff\x00"
+len_noise_max_65535="\xff\xff\x00"
+len_65536="\x00\x00\x01"
+# u24 ceiling: the largest thing a peer can physically declare.
+len_u24_max="\xff\xff\xff"
+# Small/legitimate lengths seen from real miners.
+len_zero="\x00\x00\x00"
+len_24="\x18\x00\x00"
+len_33="\x21\x00\x00"
+
+# --- full 6-byte frame headers ---
+# The literal attack header: ext=0, type=0x00, msg_len=200000.
+hdr_attack="\x00\x00\x00\x40\x0d\x03"
+# A benign SubmitSharesExtended header: ext=0x8000, type=0x1b, msg_len=33.
+hdr_submit_extended="\x00\x80\x1b\x21\x00\x00"

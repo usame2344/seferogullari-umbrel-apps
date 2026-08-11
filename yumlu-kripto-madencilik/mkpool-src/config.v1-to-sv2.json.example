@@ -1,0 +1,34 @@
+{
+  "_comment": "mkpool V1->SV2 TRANSLATING PROXY (direction B of the bidirectional Stratum V2 translator). Accepts plain Stratum V1 miners (which is most hardware) and relays them to a Stratum V2 UPSTREAM pool over an SV2 extended channel - so a V1 rig can mine on an SV2-only pool. Stateless (no database). Run: mkpool -c config.v1-to-sv2.json.example. '_'-prefixed keys are ignored.",
+  "activeCoin": "BTC",
+
+  "global": {
+    "role": "proxy",
+    "metricsListenAddress": "127.0.0.1",
+    "metricsListenPort": 9090,
+    "logPath": "/var/log/mkpool",
+    "logLevel": 2,
+    "controlSocket": ""
+  },
+
+  "coins": {
+    "BTC": {
+      "chain": "bitcoin",
+
+      "_stratum_comment": "Ports plain Stratum V1 miners connect to (no sv2 flag = V1).",
+      "stratumListenAddress": "0.0.0.0",
+      "stratumTiers": [
+        { "port": 3333, "label": "v1", "startingDifficulty": 16384 }
+      ],
+
+      "_upstream_comment": "sv2:true makes the proxy connect OUT with Stratum V2 (an extended mining channel) instead of V1 - point it at an SV2 pool. 'user' is the payout address(.worker); 'pass' usually 'x'. nonceBytes = per-miner slot width carved from the SV2 channel extranonce. (Upstream is plaintext SV2 for now; a Noise-encrypted upstream is a follow-up.)",
+      "upstream": {
+        "sv2": true,
+        "nonceBytes": 2,
+        "endpoints": [
+          { "host": "sv2.example-pool.com", "port": 3336, "user": "REPLACE_WITH_UPSTREAM_USERNAME", "pass": "x" }
+        ]
+      }
+    }
+  }
+}

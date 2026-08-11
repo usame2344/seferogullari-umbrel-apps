@@ -1,0 +1,58 @@
+{
+  "_comment": "mkpool ORIGIN example: a normal solo POOL (role 'pool', full database + accounting) that ALSO accepts cluster trunks from passthrough / node edges. The ONLY additions versus a plain pool are the per-coin 'cluster' ingest block (ingestPort/token) and, for node block relay, rawblockZmq. Clustered miners are bridged to this pool's own stratum port and served exactly like direct miners, with no change to the solo path. This is abbreviated; see config.json.example for the full solo field set. '_'-prefixed keys are ignored.",
+  "activeCoin": "BTC",
+
+  "global": {
+    "role": "pool",
+    "metricsListenAddress": "0.0.0.0",
+    "metricsListenPort": 9090,
+    "logPath": "/var/log/mkpool",
+    "logLevel": 2,
+
+    "databaseHost": "127.0.0.1",
+    "databasePort": 5432,
+    "databaseName": "mkpool",
+    "databaseUser": "mkpool_user",
+    "databasePassword": "REPLACE_ME",
+
+    "controlSocket": ""
+  },
+
+  "coins": {
+    "BTC": {
+      "chain": "bitcoin",
+      "rpcHost": "127.0.0.1",
+      "rpcPort": "8332",
+      "rpcUser": "REPLACE_ME",
+      "rpcPassword": "REPLACE_ME",
+
+      "useZMQ": true,
+      "zmq": {
+        "hashblock": ["tcp://127.0.0.1:28332"],
+        "rawblock": ["tcp://127.0.0.1:28333"]
+      },
+
+      "_stratum_comment": "Normal miner-facing ports. Clustered miners forwarded by a passthrough/node are bridged to this same port internally (default forwardPort), so they get the exact same vardiff / accounting / coinbase as direct miners.",
+      "stratumListenAddress": "0.0.0.0",
+      "stratumListenPort": 3333,
+      "stratumTiers": [
+        { "port": 3333, "label": "vardiff", "startingDifficulty": 32768, "vardiffEnabled": true, "vardiffMin": 1024, "vardiffMax": 10000000 }
+      ],
+
+      "coinbaseSignature": "/mkpool.com/",
+      "donationPercent": 1.0,
+      "donationAddress": "REPLACE_WITH_YOUR_BECH32_ADDRESS",
+
+      "_cluster_comment": "Origin ingest. ingestPort accepts passthrough/node trunks; token MUST match the edges' cluster.token. forwardPort is where each clustered miner is bridged internally (0 or omitted => this coin's stratum port). ingestTls:true terminates TLS on the trunk acceptor (needs global.tls). rawblockZmq (this origin node's rawblock feed) enables streaming found blocks to NODE trunks for local submission; omit it and node trunks still work as passthroughs. Raise global.rateLimit.maxConnectionsPerIP if many clustered miners share the loopback bridge IP.",
+      "cluster": {
+        "ingestAddress": "0.0.0.0",
+        "ingestPort": 4000,
+        "ingestTls": false,
+        "forwardHost": "127.0.0.1",
+        "forwardPort": 3333,
+        "rawblockZmq": "tcp://127.0.0.1:28333",
+        "token": "REPLACE_WITH_SHARED_CLUSTER_SECRET"
+      }
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "_comment": "mkpool REDIRECTOR role example. A redirector accepts a miner, immediately issues client.reconnect to steer it onto one of several real backends, then closes the connection. Stateless, no database. Useful as one stable front-door hostname that load-balances and health-steers miners across pool instances. Run: mkpool -c config.redirector.json.example. '_'-prefixed keys are ignored.",
+  "activeCoin": "BTC",
+
+  "global": {
+    "role": "redirector",
+    "metricsListenAddress": "127.0.0.1",
+    "metricsListenPort": 9090,
+    "logPath": "/var/log/mkpool",
+    "logLevel": 2,
+    "controlSocket": ""
+  },
+
+  "coins": {
+    "BTC": {
+      "chain": "bitcoin",
+
+      "_stratum_comment": "The single front-door port miners connect to before being redirected.",
+      "stratumListenAddress": "0.0.0.0",
+      "stratumListenPort": 3333,
+
+      "_redirect_comment": "Backends miners are bounced to. strategy: 'round-robin' | 'random' | 'latency' (steer to the fastest healthy backend). wait = seconds the miner should wait before reconnecting (client.reconnect arg). healthCheck periodically TCP-probes each target and only steers to healthy ones (fastest first under 'latency'); it fails open (treats all as healthy) if every target is down. weight biases selection toward higher-weight targets.",
+      "redirect": {
+        "strategy": "latency",
+        "wait": 0,
+        "healthCheck": true,
+        "healthCheckIntervalSeconds": 10,
+        "healthCheckTimeoutMs": 1000,
+        "targets": [
+          { "host": "pool-a.example.com", "port": 3333, "weight": 2 },
+          { "host": "pool-b.example.com", "port": 3333, "weight": 1 }
+        ]
+      }
+    }
+  }
+}

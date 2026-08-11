@@ -1,0 +1,123 @@
+name: Set up mkpool build toolchain
+description: >
+  Installs mkpool's build dependencies. Expects to run inside the ubuntu:26.04
+  container the workflows declare -- see the note in ci.yml for why stock
+  ubuntu-latest cannot build this project at all.
+
+inputs:
+  fuzz:
+    description: >
+      Also install the header-only libs the fuzz replay targets need. Those
+      targets compile mkpool sources with g++ WITHOUT CMake, so they cannot use
+      the FetchContent copies of fmt/spdlog/nlohmann the normal build gets.
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    # The container is the distro production runs, so everything is stock: the
+    # image's default gcc/g++ (15.2), no version pinning. The libpqxx double-free
+    # that g++-15 used to hit is fixed at the source (cmake/hidden-exports.map),
+    # so there is nothing left to pin around -- the project builds and passes
+    # under the stock compiler.
+    #
+    # gcc AND g++: the project declares `LANGUAGES CXX C`, so CMake needs a C
+    # compiler at configure time even though there is no first-party C source
+    # (dependency probes use it). Installing both also provides the unversioned
+    # gcc/g++/cc names CMake looks for by default, so no compiler pin is needed.
+    #
+    # cppzmq-dev is easy to miss: libzmq3-dev ships the C header (zmq.h), but
+    # zmq_client.hpp includes <zmq.hpp>, the header-only C++ binding, a separate
+    # package. It never appears in ldd and CMake only pkg-checks libzmq, so a
+    # missing cppzmq surfaces mid-compile rather than at configure time.
+    #
+    # gdb/file are diagnostics: when a binary refuses to start, gdb turns the
+    # failure into a stack trace instead of a guess.
+    - name: Install packages
+      shell: bash
+      run: |
+        apt-get update
+        apt-get install -y --no-install-recommends \
+          cmake ninja-build pkg-config gcc g++ \
+          libboost-all-dev libssl-dev libpq-dev libpqxx-dev \
+          libzmq3-dev cppzmq-dev libsodium-dev libsecp256k1-dev \
+          gdb file
+        if [ "${{ inputs.fuzz }}" = "true" ]; then
+          # System fmt/spdlog/nlohmann for the g++ fuzz-replay build, which does
+          # not go through CMake and so cannot see the FetchContent copies.
+          apt-get install -y --no-install-recommends \
+            nlohmann-json3-dev libfmt-dev libspdlog-dev
+        fi
+
+    # One probe including every external header the project uses, rather than
+    # checking suspects one at a time. Piecemeal checks only ever find the next
+    # missing dependency, one CI run apiece; this fails once with the full list.
+    - name: Verify headers resolve
+      shell: bash
+      run: |
+        cat > /tmp/probe.cpp <<'EOF'
+        #include <print>          // pch.hpp; GCC 14.1+
+        #include <expected>       // address.hpp
+        #include <format>
+        #include <boost/asio.hpp>
+        #include <boost/asio/ssl.hpp>
+        #include <boost/beast/core.hpp>
+        #include <boost/beast/http.hpp>
+        #include <pqxx/pqxx>
+        #include <zmq.hpp>        // cppzmq-dev, NOT libzmq3-dev
+        #include <sodium.h>
+        #include <secp256k1.h>
+        #include <secp256k1_ellswift.h>   // libsecp256k1 needs the ellswift module
+        #include <openssl/sha.h>
+        #include <openssl/evp.h>
+        int main(){}
+        EOF
+        CF=$(pkg-config --cflags libpqxx libzmq libsodium libsecp256k1 2>/dev/null || true)
+        if g++ -std=c++23 -fsyntax-only $CF /tmp/probe.cpp 2>/tmp/probe.err; then
+          echo "OK: all external headers resolve"
+        else
+          echo "FAIL: missing build dependencies:"
+          grep -oE 'fatal error: [^:]+' /tmp/probe.err | sort -u
+          exit 1
+        fi
+
+        # For the fuzz-replay build (inputs.fuzz), also confirm the extra
+        # header-only deps it needs are present. Same g++, so this is a real gate.
+        if [ "${{ inputs.fuzz }}" = "true" ]; then
+          printf '#include <nlohmann/json.hpp>\n#include <spdlog/spdlog.h>\n#include <fmt/core.h>\nint main(){}\n' > /tmp/probe_fuzz.cpp
+          if g++ -std=c++23 -fsyntax-only -DSPDLOG_FMT_EXTERNAL -DFMT_HEADER_ONLY \
+               /tmp/probe_fuzz.cpp 2>/tmp/probe_fuzz.err; then
+            echo "OK: fuzz header-only deps resolve"
+          else
+            echo "FAIL: fuzz build deps missing:"
+            grep -oE 'fatal error: [^:]+' /tmp/probe_fuzz.err | sort -u
+            exit 1
+          fi
+        fi
+
+    # Header/library agreement, which no include-probe can catch: 24.04's libpqxx
+    # declares exception ctors taking std::source_location that its own .so does
+    # not export, so every link dies in undefined references.
+    - name: Verify libpqxx ABI
+      shell: bash
+      run: |
+        HDR=$(grep -c 'define PQXX_HAVE_SOURCE_LOCATION' \
+                /usr/include/pqxx/config-public-compiler.h 2>/dev/null || true)
+        SOFILE=$(ldconfig -p | grep -m1 -oE '/[^ ]*libpqxx[^ ]*\.so[^ ]*' || true)
+        SO=0
+        [ -n "$SOFILE" ] && SO=$(nm -DC "$SOFILE" 2>/dev/null | grep -c 'argument_error.*source_location' || true)
+        echo "libpqxx: header declares source_location ctors=${HDR:-0}, .so exports them=${SO:-0}"
+        if [ "${HDR:-0}" -gt 0 ] && [ "${SO:-0}" -eq 0 ]; then
+          echo "FAIL: libpqxx header/library ABI mismatch on source_location"
+          exit 1
+        fi
+        echo "OK: libpqxx header and library agree"
+
+    - name: Report toolchain
+      shell: bash
+      run: |
+        echo "compiler:    $(g++ --version | head -1)"
+        echo "libsecp256k1 $(pkg-config --modversion libsecp256k1)"
+        echo "libzmq       $(pkg-config --modversion libzmq)"
+        echo "libpqxx      $(pkg-config --modversion libpqxx 2>/dev/null || echo '?')"

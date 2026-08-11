@@ -1,0 +1,138 @@
+name: Release
+
+# Builds a Linux x86_64 release package.
+#
+# WHY A CONTAINER, NOT ubuntu-latest
+# ----------------------------------
+# The binary links libpqxx and libsecp256k1 by SONAME. Production runs Ubuntu
+# 26.04 (libpqxx-7.10.so, libsecp256k1.so.6); ubuntu-latest is 24.04 and ships
+# libpqxx 7.8 with a different soname. A binary built there does not start on
+# 26.04 -- it fails at the dynamic linker with "cannot open shared object file",
+# which is exactly the release nobody wants to debug.
+#
+# Building inside ubuntu:26.04 also removes two workarounds ci.yml needs:
+# 26.04's default g++ is 14.3 (so <print> just works) and its libsecp256k1 is
+# 0.7.0 with the ellswift module already enabled (so no source build).
+#
+# If the deployment target ever changes, change the container tag -- that single
+# line is what pins the ABI.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to stamp (default: from CMakeLists project())'
+        required: false
+
+permissions:
+  contents: write   # needed to create the GitHub Release
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+
+    steps:
+      # git must exist BEFORE checkout, or actions/checkout falls back to a REST
+      # tarball and we lose the tag metadata this job needs to stamp a version.
+      # No sudo: the container runs as root.
+      - name: Bootstrap container
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates
+
+      - uses: actions/checkout@v4
+
+      # Same toolchain as ci.yml, including its preconditions check -- a release
+      # is the last place you want to discover the base image lost ellswift or
+      # drifted on the pqxx ABI.
+      - uses: ./.github/actions/setup-toolchain
+
+      - name: Install packaging tools
+        run: apt-get install -y --no-install-recommends file
+
+      - name: Determine version
+        id: ver
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            V="${{ inputs.version }}"
+          elif [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            V="${GITHUB_REF_NAME#v}"          # v0.2.0 -> 0.2.0
+          else
+            V=$(grep -Po 'VERSION\s+\K[0-9]+\.[0-9]+\.[0-9]+' CMakeLists.txt | head -1)
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "pkg=mkpool-$V-linux-x86_64" >> "$GITHUB_OUTPUT"
+          echo "building version $V"
+
+      - name: Configure
+        # Stock container compiler, same as ci.yml -- the double-free that used to
+        # force a pin is fixed at the source (cmake/hidden-exports.map).
+        #
+        # MKPOOL_NATIVE=OFF is mandatory for a distributable: -march=native tunes
+        # the binary to whatever CPU this runner happened to be, and it would
+        # SIGILL on anything older. LTO stays ON -- this is the shipping build.
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DMKPOOL_BUILD_TESTS=ON \
+            -DMKPOOL_NATIVE=OFF
+
+      - name: Build
+        run: cmake --build build -j"$(nproc)"
+
+      # Never ship a binary that fails its own suite. This is the last gate
+      # before the artifact becomes something someone deploys.
+      - name: Test before packaging
+        run: |
+          COUNT=$(ctest --test-dir build -N | tail -1 | grep -oE '[0-9]+$')
+          echo "discovered $COUNT tests"
+          [ "${COUNT:-0}" -ge 50 ] || { echo "FAIL: expected >=50 tests, found $COUNT"; exit 1; }
+          ctest --test-dir build --output-on-failure
+
+      - name: Smoke-test the binary
+        run: |
+          ./build/mkpool --help >/dev/null || { echo "FAIL: binary does not run"; exit 1; }
+          file ./build/mkpool
+
+      # Package contents: the binary, every example config (solo + the scale-out
+      # roles: proxy / redirector / passthrough / node / cluster-origin / SV2), and
+      # the licence.
+      - name: Assemble package
+        env:
+          PKG: ${{ steps.ver.outputs.pkg }}
+        run: |
+          mkdir -p "$PKG"
+          cp build/mkpool        "$PKG/"
+          cp config*.json.example "$PKG/"
+          cp COPYING             "$PKG/"
+
+      - name: Archive and checksum
+        env:
+          PKG: ${{ steps.ver.outputs.pkg }}
+        run: |
+          tar -czf "$PKG.tar.gz" "$PKG"
+          sha256sum "$PKG.tar.gz" | tee "$PKG.tar.gz.sha256"
+          ls -la "$PKG.tar.gz"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.ver.outputs.pkg }}
+          path: |
+            ${{ steps.ver.outputs.pkg }}.tar.gz
+            ${{ steps.ver.outputs.pkg }}.tar.gz.sha256
+          if-no-files-found: error
+
+      # Only on a real tag. workflow_dispatch builds an artifact you can inspect
+      # without publishing anything.
+      - name: Publish GitHub Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ steps.ver.outputs.pkg }}.tar.gz
+            ${{ steps.ver.outputs.pkg }}.tar.gz.sha256
+          generate_release_notes: true
+          fail_on_unmatched_files: true

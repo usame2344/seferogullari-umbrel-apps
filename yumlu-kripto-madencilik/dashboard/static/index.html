@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YUMLU KRİPTO MADENCİLİK</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<div class="shell">
+
+<header>
+    <div class="brand">
+        <div class="coin">₿</div>
+
+        <div>
+            <h1>YUMLU KRİPTO MADENCİLİK</h1>
+            <p>Bitcoin Solo Mining Pool</p>
+        </div>
+    </div>
+
+    <div class="live">
+        <span id="status-dot"></span>
+        <span id="status-text">Bağlanıyor</span>
+    </div>
+</header>
+
+
+<section class="cards">
+
+    <article class="card">
+        <span class="label">POOL HASHRATE</span>
+        <strong id="hashrate">0 H/s</strong>
+        <small id="hashrate5">5 dk: 0 H/s</small>
+    </article>
+
+    <article class="card">
+        <span class="label">AKTİF WORKER</span>
+        <strong id="workers">0</strong>
+        <small>bağlı madenci</small>
+    </article>
+
+    <article class="card highlight">
+        <span class="label">BEST SHARE</span>
+        <strong id="best">0</strong>
+        <small>en yüksek difficulty</small>
+    </article>
+
+    <article class="card">
+        <span class="label">BULUNAN BLOK</span>
+        <strong id="blocks">0</strong>
+        <small>Bitcoin blokları</small>
+    </article>
+
+</section>
+
+
+<section class="panel chart-panel">
+
+    <div class="panel-head">
+        <div>
+            <h2>Hashrate</h2>
+            <p>Madencilik performansı</p>
+        </div>
+
+        <div class="ranges">
+            <button data-hours="1" class="active">1S</button>
+            <button data-hours="6">6S</button>
+            <button data-hours="24">24S</button>
+        </div>
+    </div>
+
+    <div class="chart-wrap">
+        <canvas id="chart"></canvas>
+    </div>
+
+</section>
+
+
+<section class="panel">
+
+    <div class="panel-head">
+        <div>
+            <h2>Madenciler</h2>
+            <p>Aktif worker performansı</p>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+
+        <table>
+
+            <thead>
+            <tr>
+                <th>WORKER</th>
+                <th>HASHRATE</th>
+                <th>BEST SHARE</th>
+                <th>SON SHARE</th>
+                <th>DURUM</th>
+            </tr>
+            </thead>
+
+            <tbody id="miners">
+            <tr>
+                <td colspan="5" class="empty">
+                    Henüz madenci yok
+                </td>
+            </tr>
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
+
+
+<section class="panel">
+
+    <div class="panel-head">
+        <div>
+            <h2>Bulunan Bloklar</h2>
+            <p>Solo mining başarıları</p>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+
+        <table>
+
+            <thead>
+            <tr>
+                <th>HEIGHT</th>
+                <th>WORKER</th>
+                <th>ÖDÜL</th>
+                <th>EFFORT</th>
+                <th>TARİH</th>
+            </tr>
+            </thead>
+
+            <tbody id="block-list">
+            <tr>
+                <td colspan="5" class="empty">
+                    Henüz blok bulunmadı
+                </td>
+            </tr>
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
+
+
+<footer>
+    <span>Stratum V1</span>
+    <strong>TCP :3333</strong>
+    <span class="sep">•</span>
+    <span>Coinbase</span>
+    <strong>SEFEROGULLARI</strong>
+</footer>
+
+</div>
+
+<script src="/app.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,132 @@
+name: Fuzz corpus replay
+
+# Guards everything an unauthenticated peer can send: Stratum V1 (mining.configure
+# params, payout addresses) and Stratum V2 (frame headers, message bodies, the
+# Noise handshake).
+#
+# Exists because of the 2026-07-15 incident, where an SV2 frame declaring
+# msg_length=200000 overflowed a 16 KiB read buffer and crash-looped four pools.
+#
+# REPLAY, NOT COVERAGE-GUIDED FUZZING.
+# Coverage-guided fuzzing needs clang's libFuzzer, and clang's libstdc++
+# autodetection on the CI base image cannot be pinned reliably (it prefers a
+# header-less gcc-16 install dir the image ships). So CI does not explore -- it
+# replays the committed corpus (which includes the literal attack payload)
+# through each target under ASan/UBSan, built with the SAME g++ the rest of the
+# build already passes with. That keeps the regression guarantee -- a
+# reintroduced bug crashes on a seed -- with zero clang dependency.
+#
+# For actual exploration, build a target with clang locally; see
+# tests/fuzz/README.md. This gate is deliberately boring so it stays green.
+#
+# COST NOTE (private repo): Actions minutes are billed here, so this runs monthly.
+# The public mirror carries byte-identical wire-surface files and free minutes.
+
+on:
+  schedule:
+    # 05:00 on the 1st, an hour after ci.yml so the two never contend for a runner.
+    - cron: '0 5 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+  # Fuzz replay hunts memory CORRUPTION (overflow, use-after-free, OOB read --
+  # the 2026-07-15 class), not leaks. Leak detection on a short-lived parser
+  # replay adds nothing and only flags libpqxx's static-init allocations. The
+  # CMake sanitizers job in ci.yml owns leak detection.
+  ASAN_OPTIONS: detect_leaks=0
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Stratum V2 framing: sv2_codec.hpp / sv2_messages.hpp are header-only and pull
+  # nothing but the standard library, so these compile with g++ in seconds with
+  # no project dependencies. Kept in the container for a current g++ (<print>).
+  # ---------------------------------------------------------------------------
+  sv2:
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [fuzz_sv2_frame, fuzz_sv2_message, fuzz_sv2_codec]
+    steps:
+      - name: Bootstrap container
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates
+      - uses: actions/checkout@v4
+      - name: Install g++
+        run: apt-get install -y --no-install-recommends g++ ca-certificates
+
+      # Link the target's LLVMFuzzerTestOneInput against the replay driver instead
+      # of libFuzzer, then run it over the corpus under ASan/UBSan. A crash on any
+      # seed -- including tests/fuzz/corpus/frame_attack_msglen_200000 -- fails CI.
+      - name: Build ${{ matrix.target }} (g++ + ASan/UBSan)
+        # --version-script: same libpqxx type_name double-free fix the main
+        # binaries use (cmake/hidden-exports.map). Harmless here (these link no
+        # pqxx) but kept uniform so every mkpool executable exports nothing.
+        run: |
+          g++ -std=c++23 -I src \
+            -fsanitize=address,undefined -fno-omit-frame-pointer -g -O1 \
+            -Wl,--version-script=cmake/hidden-exports.map \
+            tests/fuzz/${{ matrix.target }}.cpp tests/fuzz/replay_main.cpp \
+            -o ${{ matrix.target }}
+
+      - name: Replay corpus
+        run: ./${{ matrix.target }} tests/fuzz/corpus
+
+  # ---------------------------------------------------------------------------
+  # Targets that need real translation units: each includes pch.hpp, which pulls
+  # fmt/spdlog/nlohmann/OpenSSL/Boost/pqxx/secp256k1/sodium. The mkpool source is
+  # compiled straight in, same as any other g++ build of the project.
+  #
+  # address::decode and negotiate_configure are noexcept and attacker-fed, so an
+  # escaping exception is std::terminate. sv2_noise is the first code an
+  # unauthenticated peer reaches on an SV2 port.
+  # ---------------------------------------------------------------------------
+  v1:
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: fuzz_address
+            source: src/address.cpp
+            libs: "-lssl -lcrypto -lpqxx -lpq"
+          - target: fuzz_stratum_configure
+            source: src/stratum_protocol.cpp
+            libs: "-lssl -lcrypto -lpqxx -lpq"
+          - target: fuzz_sv2_noise
+            source: src/sv2_noise.cpp
+            libs: "-lsodium -lsecp256k1 -lssl -lcrypto -lpqxx -lpq"
+    steps:
+      - name: Bootstrap container
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-toolchain
+        with:
+          fuzz: 'true'   # also installs system fmt/spdlog/nlohmann for the g++ build
+
+      - name: Build ${{ matrix.target }} (g++ + ASan/UBSan)
+        run: |
+          # Compiled with g++ -- the same compiler and headers the main build
+          # uses -- so no clang libstdc++/compiler-rt detection to go wrong. The
+          # FetchContent copies of fmt/spdlog/nlohmann are not available outside
+          # CMake, hence the system packages from the toolchain action.
+          #
+          # --version-script is REQUIRED here (not just cosmetic): these link
+          # libpqxx and instantiate pqxx::type_name<T>, which under g++ 15 exports
+          # from the executable, preempts libpqxx.so, and double-frees at exit.
+          # cmake/hidden-exports.map is the same fix mkpool/mkpool_tests use.
+          g++ -std=c++23 -I src \
+            $(pkg-config --cflags libpqxx libzmq libsodium libsecp256k1 2>/dev/null) \
+            -DSPDLOG_FMT_EXTERNAL -DFMT_HEADER_ONLY \
+            -fsanitize=address,undefined -fno-omit-frame-pointer -g -O1 \
+            -Wl,--version-script=cmake/hidden-exports.map \
+            tests/fuzz/${{ matrix.target }}.cpp ${{ matrix.source }} \
+            tests/fuzz/replay_main.cpp ${{ matrix.libs }} -o ${{ matrix.target }}
+
+      - name: Replay corpus
+        run: ./${{ matrix.target }} tests/fuzz/corpus-v1

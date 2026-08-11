@@ -1,0 +1,11 @@
+# LeakSanitizer suppressions.
+#
+# Only third-party allocations that mkpool cannot free belong here. Never add a
+# suppression for our own code: the point of running LSan is to catch that.
+
+# libpqxx builds type-name strings in its own static initialisers -- the stack is
+# demangle_type_name() called from ld.so's dl_init, before main() -- and never
+# frees them. 134 bytes, once per process, entirely inside libpqxx-7.10.so.
+# Nothing in mkpool holds a pointer to them, so there is nothing we could free.
+# Without this, every ASan job fails on a leak in a library we do not control.
+leak:libpqxx

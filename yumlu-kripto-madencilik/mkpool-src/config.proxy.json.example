@@ -1,0 +1,66 @@
+{
+  "_comment": "mkpool PROXY role example. A proxy terminates downstream Stratum V1(+TLS) miners locally and relays their work to one or more UPSTREAM pools, subdividing the upstream extranonce across miners and forwarding qualifying shares. It keeps NO database (stateless); the upstream pool owns payout and block submission. Run: mkpool -c config.proxy.json.example (replace every placeholder first). Comment keys starting with '_' are ignored by the parser.",
+  "activeCoin": "BTC",
+
+  "global": {
+    "_role_comment": "'proxy' turns mkpool into an outbound Stratum client + downstream re-server. The default 'pool' is the solo engine; proxy/redirector/passthrough/node are all stateless (no database or blacklist).",
+    "role": "proxy",
+
+    "metricsListenAddress": "127.0.0.1",
+    "metricsListenPort": 9090,
+    "logPath": "/var/log/mkpool",
+    "logLevel": 2,
+
+    "_controlSocket_comment": "Runtime admin socket (ping/stats/clients/reconnect/...). Omit to auto-derive /run/mkpool/<instance>.sock, or set 'off' to disable.",
+    "controlSocket": "",
+
+    "_tls_comment": "Only needed if a downstream tier sets tls:true (miners reach the proxy via stratum+ssl). The uplink's own TLS is configured per-endpoint below.",
+    "tls": { "certFile": "", "keyFile": "", "dhparamsFile": "" }
+  },
+
+  "coins": {
+    "BTC": {
+      "chain": "bitcoin",
+
+      "_stratum_comment": "Ports DOWNSTREAM miners connect to. The proxy mirrors the upstream difficulty; startingDifficulty is only a starting hint. Add a tier with tls:true (plus global.tls) to terminate TLS toward miners.",
+      "stratumListenAddress": "0.0.0.0",
+      "stratumListenPort": 3333,
+      "stratumTiers": [
+        { "port": 3333, "label": "proxy", "startingDifficulty": 16384 }
+      ],
+
+      "_upstream_comment": "Where the proxy fetches work. Every endpoint stays warm. mode 'failover' (default) keeps all miners on one primary with the rest as HOT STANDBY (sub-second migration on failure); 'activeactive' spreads miners across all ready endpoints by weight. nonceBytes = bytes of the upstream extranonce2 reserved as a per-miner slot id (2 => 65536 miners per endpoint). idleTimeoutSeconds = uplink silence before reconnect.",
+      "upstream": {
+        "mode": "failover",
+        "nonceBytes": 2,
+        "idleTimeoutSeconds": 90,
+        "reconnectMinSeconds": 2,
+        "reconnectMaxSeconds": 30,
+        "endpoints": [
+          {
+            "_comment": "Preferred upstream (lowest priority number wins). 'user' is normally the upstream pool's payout address(.worker); 'pass' is usually 'x'. tls:true wraps the uplink in TLS; verifyPeer:true validates the upstream certificate.",
+            "host": "stratum.example-pool.com",
+            "port": 3333,
+            "tls": false,
+            "verifyPeer": false,
+            "user": "REPLACE_WITH_UPSTREAM_USERNAME",
+            "pass": "x",
+            "priority": 0,
+            "weight": 1
+          },
+          {
+            "_comment": "Hot standby (failover) or additional share (activeactive). Higher weight => more miners under activeactive.",
+            "host": "backup.example-pool.com",
+            "port": 3333,
+            "tls": false,
+            "verifyPeer": false,
+            "user": "REPLACE_WITH_UPSTREAM_USERNAME",
+            "pass": "x",
+            "priority": 1,
+            "weight": 1
+          }
+        ]
+      }
+    }
+  }
+}

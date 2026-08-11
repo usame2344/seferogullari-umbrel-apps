@@ -1,0 +1,40 @@
+{
+  "_comment": "mkpool NODE role example. A node is a passthrough (see config.passthrough.json.example) that ALSO runs a local bitcoind: the origin streams every accepted block down the trunk and the node submits it to its own local node for geographically redundant / faster block propagation. Stateless (accounting stays at the origin). Requires the origin to set cluster.rawblockZmq. Run: mkpool -c config.node.json.example. '_'-prefixed keys are ignored.",
+  "activeCoin": "BTC",
+
+  "global": {
+    "role": "node",
+    "metricsListenAddress": "127.0.0.1",
+    "metricsListenPort": 9092,
+    "logPath": "/var/log/mkpool",
+    "logLevel": 2,
+    "controlSocket": "",
+    "tls": { "certFile": "", "keyFile": "", "dhparamsFile": "" }
+  },
+
+  "coins": {
+    "BTC": {
+      "chain": "bitcoin",
+
+      "_rpc_comment": "The node's OWN local bitcoind, used ONLY to submitblock the blocks the origin streams down the trunk. (A plain passthrough does not need this; a node does.)",
+      "rpcHost": "127.0.0.1",
+      "rpcPort": "8332",
+      "rpcUser": "REPLACE_ME",
+      "rpcPassword": "REPLACE_ME",
+
+      "_stratum_comment": "Ports DOWNSTREAM miners connect to at this edge (same as a passthrough).",
+      "stratumListenAddress": "0.0.0.0",
+      "stratumListenPort": 3333,
+
+      "_cluster_comment": "Uplink to the origin. Identical to the passthrough example; the 'node' role is what makes this edge also submit origin-streamed blocks locally. token MUST match the origin's cluster.token.",
+      "cluster": {
+        "originHost": "origin.example.com",
+        "originPort": 4000,
+        "originTls": false,
+        "originVerifyPeer": false,
+        "trunks": 1,
+        "token": "REPLACE_WITH_SHARED_CLUSTER_SECRET"
+      }
+    }
+  }
+}

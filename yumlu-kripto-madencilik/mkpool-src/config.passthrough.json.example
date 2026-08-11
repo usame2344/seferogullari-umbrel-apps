@@ -1,0 +1,36 @@
+{
+  "_comment": "mkpool PASSTHROUGH role example. A passthrough is an edge aggregator: it terminates downstream Stratum V1(+TLS) miners regionally and multiplexes ALL of them over a single TLS 'trunk' to an mkpool ORIGIN pool (see config.cluster-origin.json.example). The origin keeps full per-miner accounting and block submission; the passthrough keeps NO database. This collapses many public miner connections into one trunk (DDoS / connection-table win) and lets you terminate TLS close to the miners. Run: mkpool -c config.passthrough.json.example. '_'-prefixed keys are ignored.",
+  "activeCoin": "BTC",
+
+  "global": {
+    "role": "passthrough",
+    "metricsListenAddress": "127.0.0.1",
+    "metricsListenPort": 9091,
+    "logPath": "/var/log/mkpool",
+    "logLevel": 2,
+    "controlSocket": "",
+
+    "_tls_comment": "Only needed if a downstream tier sets tls:true (miners reach this edge via stratum+ssl). The trunk's own TLS is set in the coin's 'cluster' block below.",
+    "tls": { "certFile": "", "keyFile": "", "dhparamsFile": "" }
+  },
+
+  "coins": {
+    "BTC": {
+      "chain": "bitcoin",
+
+      "_stratum_comment": "Ports DOWNSTREAM miners connect to at the edge. Add a tier with tls:true (plus global.tls) to terminate TLS toward miners here while the trunk carries them onward to the origin.",
+      "stratumListenAddress": "0.0.0.0",
+      "stratumListenPort": 3333,
+
+      "_cluster_comment": "Uplink to the origin. originHost/originPort = the origin's cluster ingest listener. token MUST match the origin's cluster.token. originTls:true wraps the trunk in TLS (originVerifyPeer:true validates the origin certificate). trunks = parallel trunk connections to spread miners over (1 is plenty for most edges).",
+      "cluster": {
+        "originHost": "origin.example.com",
+        "originPort": 4000,
+        "originTls": false,
+        "originVerifyPeer": false,
+        "trunks": 1,
+        "token": "REPLACE_WITH_SHARED_CLUSTER_SECRET"
+      }
+    }
+  }
+}

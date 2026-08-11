@@ -1,0 +1,44 @@
+/*
+ * Linker version script: export nothing from the executable.
+ *
+ * WHY
+ * ---
+ * libpqxx declares its type-name registry as a NON-inline variable template
+ * (pqxx/strconv.hxx):
+ *
+ *     template<typename TYPE>
+ *     std::string const type_name{internal::demangle_type_name(typeid(TYPE).name())};
+ *
+ * Every TU that touches a pqxx conversion instantiates it. GCC 15 emits those
+ * instantiations into the executable's dynamic symbol table, where they PREEMPT
+ * the identical definitions inside libpqxx.so. One object then has two owners:
+ * libpqxx.so's initialiser constructs it and ours does too, and at exit both
+ * DSOs' finalisers free it -- "free(): double free detected in tcache 2" from
+ * __cxa_finalize, via _dl_call_fini.
+ *
+ * GCC 14 does not export those symbols, so each DSO keeps its own copy and
+ * nothing double-frees. That is the only reason production has been fine: it is
+ * luck, not design, and it evaporates on a compiler upgrade.
+ *
+ * libpqxx knows about this class of bug -- see the comment above
+ * PQXX_DECLARE_ENUM_CONVERSION in strconv.hxx, where they stopped inlining
+ * type_name<ENUM> after a "double free on program exit ... with gcc 12". The
+ * built-in specialisations still have the problem.
+ *
+ * Reproduces in three lines with GCC 15:
+ *     #include <pqxx/pqxx>
+ *     int main() { return pqxx::type_name<int>.size(); }
+ *
+ * WHAT THIS DOES
+ * --------------
+ * Marks every symbol in the executable local, so nothing it defines can preempt
+ * a shared library's own definition. An executable has no reason to export
+ * anything: mkpool has no plugins and nothing dlopen()s it.
+ *
+ * Verified: cross-DSO exception matching still works -- a pqxx::broken_connection
+ * thrown inside libpqxx.so is still caught by its exact type here, which
+ * db_worker.cpp relies on for reconnects.
+ */
+{
+  local: *;
+};

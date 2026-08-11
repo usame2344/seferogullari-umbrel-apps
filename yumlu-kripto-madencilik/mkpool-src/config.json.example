@@ -1,0 +1,208 @@
+{
+  "_comment": "mkpool example config. Covers every field the loader understands (see config.hpp). REPLACE every credential and donation/payout address with your own before running. Comment keys starting with '_' are ignored by the parser.",
+  "activeCoin": "BTC",
+
+  "global": {
+    "metricsListenAddress": "0.0.0.0",
+    "metricsListenPort": 9090,
+
+    "logPath": "/var/log/mkpool",
+    "logLevel": 2,
+
+    "databaseHost": "127.0.0.1",
+    "databasePort": 5432,
+    "databaseName": "mkpool",
+    "databaseUser": "mkpool_user",
+    "databasePassword": "REPLACE_ME",
+
+    "ioThreads": 2,
+    "sessionShards": 16,
+    "debugMode": false,
+
+    "_controlSocket_comment": "Runtime admin socket. Omit to auto-derive /run/mkpool/<instance>.sock; set an explicit path, or 'off' to disable. Talk to it with scripts/mkpool-ctl.py -i <instance> <cmd> (ping/stats/clients/workers/users/getclient/reconnect/dropclient/dropall/loglevel/resetshares/blacklistreload/healthcheck).",
+    "controlSocket": "",
+
+    "_idleDropSeconds_comment": "Dead-worker reap: drop a miner that hasn't submitted an accepted share for this many seconds. 0 = disabled (default). Use a generous value (e.g. 600) - high-diff miners can be legitimately quiet between shares.",
+    "idleDropSeconds": 0,
+
+    "_tls_comment": "Leave the paths empty to disable TLS. To terminate TLS on a stratum tier (tls:true on the tier below) or to serve stratum+ssl, point certFile/keyFile at a PEM cert and key. dhparamsFile is optional.",
+    "tls": {
+      "certFile": "",
+      "keyFile": "",
+      "dhparamsFile": ""
+    },
+
+    "rateLimit": {
+      "_comment": "DDoS-only protection. These values MUST NOT throttle legitimate mining traffic, including aggregator IPs (NiceHash / MRR) fronting thousands of rigs.",
+      "maxConnectionsPerIP": 50000,
+      "acceptBurst": 10000,
+      "acceptRefillPerSec": 1000.0,
+      "invalidShareBanThreshold": 10000,
+      "invalidShareWindowSec": 300,
+      "banDurationSec": 3600
+    }
+  },
+
+  "coins": {
+    "BTC": {
+      "_comment": "Supported chain values: bitcoin, bch, bc2, bch2, dgb, xec, zec, ltc, doge. Every coin uses this same field set. rpcPort is 8332 mainnet / 18332 testnet. Generate your own P2WPKH donation address with your own wallet (DO NOT reuse this example).",
+      "chain": "bitcoin",
+      "rpcHost": "127.0.0.1",
+      "rpcPort": "8332",
+      "rpcUser": "REPLACE_ME",
+      "rpcPassword": "REPLACE_ME",
+
+      "_rpcFallbacks_comment": "Optional. Extra bitcoind nodes to fail over to, in order, when the primary stops answering. A 30s watchdog switches back once the primary recovers. Omit creds to reuse the primary's. Empty/absent = single-node behaviour (unchanged).",
+      "rpcFallbacks": [],
+
+      "useZMQ": true,
+      "zmq": {
+        "hashblock": ["tcp://127.0.0.1:28332"],
+        "rawblock": ["tcp://127.0.0.1:28333"]
+      },
+
+      "stratumListenAddress": "0.0.0.0",
+      "stratumListenPort": 3333,
+      "stratumMaxConnectionsPerIP": 1000,
+
+      "_sv2_comment": "Stratum V2 (Noise-encrypted). Set v2Port to 0 to disable. v2EmptyBlocks=false builds full blocks (collects fees); true is subsidy-only and intended for testnet. v2NoiseRequired rejects unencrypted V2. v2AuthorityKey is the pool's SV2 signing public key.",
+      "stratumV2Port": 3340,
+      "stratumV2Difficulty": 1024,
+      "stratumV2EmptyBlocks": false,
+      "sv2NoiseRequired": false,
+      "sv2AuthorityKey": "",
+
+      "_stratumTiers_comment": "Each tier is its own TCP port. startingDifficulty is fixed for the session unless vardiffEnabled=true (then [vardiffMin, vardiffMax] applies). NiceHash/MRR user agents are rejected unless allowNiceHash=true. tls:true terminates TLS on that port (requires global.tls cert/key).",
+      "stratumTiers": [
+        {
+          "port": 3331,
+          "label": "vardiff",
+          "startingDifficulty": 32768,
+          "vardiffEnabled": true,
+          "vardiffMin": 1024,
+          "vardiffMax": 10000000
+        },
+        { "port": 3332, "label": "fixed-250K", "startingDifficulty": 250000 },
+        { "port": 3333, "label": "fixed-524K", "startingDifficulty": 524288 },
+        { "port": 3334, "label": "fixed-1M", "startingDifficulty": 1000000 },
+        {
+          "port": 3335,
+          "label": "fixed-10M",
+          "startingDifficulty": 10000000,
+          "allowNiceHash": true
+        },
+        {
+          "port": 3336,
+          "label": "fixed-50M",
+          "startingDifficulty": 50000000,
+          "allowNiceHash": true
+        },
+        {
+          "port": 3337,
+          "label": "fixed-100M",
+          "startingDifficulty": 100000000,
+          "allowNiceHash": true
+        },
+        {
+          "_comment": "Example TLS tier: same as fixed-1M but the line protocol runs inside TLS.",
+          "port": 3338,
+          "label": "fixed-1M-tls",
+          "startingDifficulty": 1000000,
+          "tls": true
+        }
+      ],
+
+      "targetSharesPerMinute": 12.0,
+      "vardiffTauSeconds": 30.0,
+      "blockPollInterval": 10,
+
+      "coinbaseSignature": "/mkpool.com/",
+      "donationPercent": 1.0,
+      "donationAddress": "REPLACE_WITH_YOUR_BECH32_ADDRESS",
+
+      "enableVersionRolling": true,
+      "versionRollingMask": "1fffe000",
+      "jobWindowSize": 32,
+
+      "_additionalSubmitEndpoints_comment": "Optional. Extra host:port nodes that ALSO receive submitblock on every block find (fire-and-forget, reusing this coin's RPC creds) for faster/redundant propagation. Never gates or delays the primary submit. Empty = disabled.",
+      "additionalSubmitEndpoints": []
+    },
+
+    "BCH": {
+      "_comment": "BCH has no version-rolling (enableVersionRolling is forced off for this chain). Use a CashAddr donation address.",
+      "chain": "bch",
+      "rpcHost": "127.0.0.1",
+      "rpcPort": "8332",
+      "rpcUser": "REPLACE_ME",
+      "rpcPassword": "REPLACE_ME",
+      "useZMQ": true,
+      "zmq": {
+        "hashblock": ["tcp://127.0.0.1:28432"],
+        "rawblock": ["tcp://127.0.0.1:28433"]
+      },
+      "stratumListenAddress": "0.0.0.0",
+      "stratumListenPort": 3344,
+      "stratumTiers": [
+        {
+          "port": 3341,
+          "label": "vardiff",
+          "startingDifficulty": 32768,
+          "vardiffEnabled": true,
+          "vardiffMin": 1024,
+          "vardiffMax": 10000000
+        },
+        { "port": 3343, "label": "fixed-524K", "startingDifficulty": 524288 }
+      ],
+      "targetSharesPerMinute": 12.0,
+      "blockPollInterval": 10,
+      "coinbaseSignature": "/mkpool.com/",
+      "donationPercent": 1.0,
+      "donationAddress": "REPLACE_WITH_YOUR_CASHADDR",
+      "enableVersionRolling": false,
+      "jobWindowSize": 32
+    },
+
+    "LTC": {
+      "_comment": "Litecoin with Dogecoin merge-mining (AuxPoW). The 'aux' block points at a dogecoind; DOGE blocks are merge-mined off LTC work. payoutAddress is the DOGE address that receives the aux coinbase.",
+      "chain": "ltc",
+      "rpcHost": "127.0.0.1",
+      "rpcPort": "9332",
+      "rpcUser": "REPLACE_ME",
+      "rpcPassword": "REPLACE_ME",
+      "useZMQ": true,
+      "zmq": {
+        "hashblock": ["tcp://127.0.0.1:28432"],
+        "rawblock": ["tcp://127.0.0.1:28433"]
+      },
+      "aux": {
+        "enabled": true,
+        "rpcHost": "127.0.0.1",
+        "rpcPort": "22555",
+        "rpcUser": "REPLACE_ME",
+        "rpcPassword": "REPLACE_ME",
+        "payoutAddress": "REPLACE_WITH_YOUR_DOGE_ADDRESS",
+        "donationPercent": 1.0,
+        "donationAddress": "REPLACE_WITH_YOUR_DOGE_ADDRESS"
+      },
+      "stratumListenAddress": "0.0.0.0",
+      "stratumListenPort": 3354,
+      "stratumTiers": [
+        {
+          "port": 3351,
+          "label": "vardiff",
+          "startingDifficulty": 65536,
+          "vardiffEnabled": true,
+          "vardiffMin": 1024,
+          "vardiffMax": 10000000
+        }
+      ],
+      "targetSharesPerMinute": 12.0,
+      "blockPollInterval": 10,
+      "coinbaseSignature": "/mkpool.com/",
+      "donationPercent": 1.0,
+      "donationAddress": "REPLACE_WITH_YOUR_LTC_ADDRESS",
+      "enableVersionRolling": false,
+      "jobWindowSize": 32
+    }
+  }
+}

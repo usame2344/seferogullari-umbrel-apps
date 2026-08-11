@@ -1,0 +1,37 @@
+{
+  "_comment": "mkpool SV2->V1 TRANSLATING PROXY (direction A of the bidirectional Stratum V2 translator). Accepts modern, Noise-encrypted Stratum V2 miners on an sv2 tier and relays their work to a plain Stratum V1 upstream pool - so an SV2 ASIC (e.g. a Bitaxe) can mine on ANY V1 pool. Stateless (no database). The SV2 miner-facing side currently supports STANDARD mining channels. Run: mkpool -c config.sv2-to-v1.json.example. '_'-prefixed keys are ignored.",
+  "activeCoin": "BTC",
+
+  "global": {
+    "role": "proxy",
+    "metricsListenAddress": "127.0.0.1",
+    "metricsListenPort": 9090,
+    "logPath": "/var/log/mkpool",
+    "logLevel": 2,
+    "controlSocket": ""
+  },
+
+  "coins": {
+    "BTC": {
+      "chain": "bitcoin",
+
+      "_sv2AuthorityKey_comment": "Pool authority secp256k1 PRIVATE key (32-byte hex). The proxy signs its SV2 Noise certificate with it; miners verify it against the matching x-only PUBLIC key (distribute that to miners). Keep the private key secret. If empty, only plaintext SV2 miners can connect (no certificate).",
+      "sv2AuthorityKey": "REPLACE_WITH_32_BYTE_HEX_PRIVATE_KEY",
+
+      "_stratum_comment": "A tier with sv2:true is a Stratum V2 (Noise) listener - this is the port your SV2 miners connect to. startingDifficulty is the initial share target.",
+      "stratumListenAddress": "0.0.0.0",
+      "stratumTiers": [
+        { "port": 7000, "label": "sv2", "sv2": true, "startingDifficulty": 16384 }
+      ],
+
+      "_upstream_comment": "The plain Stratum V1 pool the SV2 miners are relayed to. 'user' is normally the upstream pool's payout address(.worker); 'pass' is usually 'x'. nonceBytes = per-miner slot width carved from the upstream extranonce.",
+      "upstream": {
+        "mode": "failover",
+        "nonceBytes": 2,
+        "endpoints": [
+          { "host": "stratum.example-pool.com", "port": 3333, "user": "REPLACE_WITH_UPSTREAM_USERNAME", "pass": "x" }
+        ]
+      }
+    }
+  }
+}
