@@ -1,0 +1,73 @@
+services:
+  app_proxy:
+    environment:
+      APP_HOST: yumlu-kripto-madencilik_dashboard_1
+      APP_PORT: 8080
+      PROXY_AUTH_WHITELIST: "/api/*"
+
+  db:
+    image: timescale/timescaledb:2.29.0-pg17
+    restart: on-failure
+    environment:
+      POSTGRES_DB: mkpool
+      POSTGRES_USER: mkpool_user
+      POSTGRES_PASSWORD: ${APP_PASSWORD}
+      TIMESCALEDB_TELEMETRY: "off"
+      TS_TUNE_MEMORY: 768MB
+      TS_TUNE_NUM_CPUS: 2
+    volumes:
+      - ${APP_DATA_DIR}/data/postgres:/var/lib/postgresql/data
+
+  mkpool:
+    image: ghcr.io/usame2344/yumlu-mkpool:0.1.0
+    restart: on-failure
+    command: ["/opt/yumlu/start-mkpool.sh"]
+    depends_on:
+      - db
+    ports:
+      - "3333:3333/tcp"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: mkpool
+      DB_USER: mkpool_user
+      DB_PASS: ${APP_PASSWORD}
+      BITCOIN_RPC_HOST: ${APP_BITCOIN_NODE_IP}
+      BITCOIN_RPC_PORT: ${APP_BITCOIN_RPC_PORT}
+      BITCOIN_RPC_USER: ${APP_BITCOIN_RPC_USER}
+      BITCOIN_RPC_PASS: ${APP_BITCOIN_RPC_PASS}
+      BITCOIN_ZMQ_HOST: ${APP_BITCOIN_NODE_IP}
+      BITCOIN_ZMQ_HASHBLOCK_PORT: ${APP_BITCOIN_ZMQ_HASHBLOCK_PORT}
+      BITCOIN_ZMQ_RAWBLOCK_PORT: ${APP_BITCOIN_ZMQ_RAWBLOCK_PORT}
+    volumes:
+      - ${APP_DATA_DIR}/data/mkpool:/data
+      - runtime:/run/mkpool
+    networks:
+      - default
+      - umbrel_main_network
+
+  dashboard:
+    image: ghcr.io/usame2344/yumlu-mkpool:0.1.0
+    restart: on-failure
+    command: ["python3","/opt/yumlu/dashboard/server.py"]
+    depends_on:
+      - db
+      - mkpool
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: mkpool
+      DB_USER: mkpool_user
+      DB_PASS: ${APP_PASSWORD}
+      MKPOOL_CONTROL_SOCKET: /run/mkpool/mkpool.sock
+      DASHBOARD_PORT: 8080
+    volumes:
+      - runtime:/run/mkpool
+
+volumes:
+  runtime:
+
+networks:
+  umbrel_main_network:
+    external: true
+    name: umbrel_main_network
