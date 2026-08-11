@@ -14,7 +14,7 @@ FROM ubuntu:24.04
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     ca-certificates python3 python3-psycopg2 \
     libboost-system1.83.0 libboost-thread1.83.0 libboost-program-options1.83.0 \
-    libssl3t64 libpq5 libpqxx-7.9 libzmq5 libsodium23 libsecp256k1-1 \
+    libssl3t64 libpq5 libpqxx-7.8t64 libzmq5 libsodium23 libsecp256k1-1 \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /opt/yumlu
 COPY --from=builder /src/build/mkpool /usr/local/bin/mkpool
