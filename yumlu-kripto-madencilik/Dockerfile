@@ -1,4 +1,4 @@
-FROM ubuntu:24.04 AS builder
+FROM debian:13-slim AS builder
 ARG MKPOOL_REF=v.0.3.0
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     build-essential cmake ninja-build pkg-config git ca-certificates \
@@ -10,11 +10,11 @@ RUN git clone --depth 1 --branch "${MKPOOL_REF}" https://github.com/Mecanik/mkpo
 RUN cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=Release -DMKPOOL_BUILD_TESTS=OFF \
     && cmake --build build -j2
 
-FROM ubuntu:24.04
+FROM debian:13-slim
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     ca-certificates python3 python3-psycopg2 \
     libboost-system1.83.0 libboost-thread1.83.0 libboost-program-options1.83.0 \
-    libssl3t64 libpq5 libpqxx-7.8t64 libzmq5 libsodium23 libsecp256k1-1 \
+    libssl3t64 libpq5 libpqxx-7.10 libzmq5 libsodium23 libsecp256k1-1 \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /opt/yumlu
 COPY --from=builder /src/build/mkpool /usr/local/bin/mkpool
