@@ -4,7 +4,7 @@ services:
 
   app_proxy:
     environment:
-      APP_HOST: yumlu-kripto-madencilik_dashboard_1
+      APP_HOST: seferogullari-yumlu-kripto-madencilik_dashboard_1
       APP_PORT: 8095
 
   db:
@@ -45,7 +45,7 @@ services:
       - "3333:3333/tcp"
 
     environment:
-      DB_HOST: yumlu-kripto-madencilik_db_1
+      DB_HOST: seferogullari-yumlu-kripto-madencilik_db_1
       DB_PORT: "5432"
       DB_NAME: mkpool
       DB_USER: mkpool_user
@@ -76,7 +76,7 @@ services:
       - mkpool
 
     environment:
-      DB_HOST: yumlu-kripto-madencilik_db_1
+      DB_HOST: seferogullari-yumlu-kripto-madencilik_db_1
       DB_PORT: "5432"
       DB_NAME: mkpool
       DB_USER: mkpool_user
