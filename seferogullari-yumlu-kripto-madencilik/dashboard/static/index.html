@@ -3,95 +3,263 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080a0d">
 <title>YUMLU KRİPTO MADENCİLİK</title>
 <link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
 
-<div class="shell">
+<div class="noise"></div>
 
-<header>
+<main class="shell">
+
+<header class="topbar">
     <div class="brand">
-        <div class="coin">₿</div>
+        <div class="coin">
+            <span>₿</span>
+        </div>
 
-        <div>
+        <div class="brand-copy">
+            <div class="eyebrow">SOLO MINING CONTROL CENTER</div>
             <h1>YUMLU KRİPTO MADENCİLİK</h1>
-            <p>Bitcoin Solo Mining Pool</p>
+            <p>Bitcoin · Stratum V1 · SEFEROGULLARI</p>
         </div>
     </div>
 
-    <div class="live">
+    <div class="live-pill">
         <span id="status-dot"></span>
-        <span id="status-text">Bağlanıyor</span>
+        <div>
+            <strong id="status-text">Bağlanıyor</strong>
+            <small>Pool Engine</small>
+        </div>
     </div>
 </header>
 
 
-<section class="cards">
+<section class="hero-grid">
 
-    <article class="card">
-        <span class="label">POOL HASHRATE</span>
+    <article class="metric metric-primary">
+        <div class="metric-top">
+            <span class="metric-label">POOL HASHRATE</span>
+            <span class="metric-icon">H/s</span>
+        </div>
+
         <strong id="hashrate">0 H/s</strong>
-        <small id="hashrate5">5 dk: 0 H/s</small>
+
+        <div class="metric-bottom">
+            <span id="hashrate5">5 dk: 0 H/s</span>
+            <span class="pulse-text">
+                <i></i> CANLI
+            </span>
+        </div>
     </article>
 
-    <article class="card">
-        <span class="label">AKTİF WORKER</span>
+
+    <article class="metric">
+        <div class="metric-top">
+            <span class="metric-label">AKTİF WORKER</span>
+            <span class="metric-icon">ASIC</span>
+        </div>
+
         <strong id="workers">0</strong>
-        <small>bağlı madenci</small>
+
+        <div class="metric-bottom">
+            <span>bağlı madenci</span>
+        </div>
     </article>
 
-    <article class="card highlight">
-        <span class="label">BEST SHARE</span>
+
+    <article class="metric metric-gold">
+        <div class="metric-top">
+            <span class="metric-label">BEST SHARE</span>
+            <span class="metric-icon">DIFF</span>
+        </div>
+
         <strong id="best">0</strong>
-        <small>en yüksek difficulty</small>
+
+        <div class="metric-bottom">
+            <span>round rekoru</span>
+        </div>
     </article>
 
-    <article class="card">
-        <span class="label">BULUNAN BLOK</span>
+
+    <article class="metric">
+        <div class="metric-top">
+            <span class="metric-label">BULUNAN BLOK</span>
+            <span class="metric-icon">BTC</span>
+        </div>
+
         <strong id="blocks">0</strong>
-        <small>Bitcoin blokları</small>
+
+        <div class="metric-bottom">
+            <span>solo başarı</span>
+        </div>
     </article>
 
 </section>
 
 
-<section class="panel chart-panel">
+<section class="intel-grid">
 
-    <div class="panel-head">
-        <div>
-            <h2>Hashrate</h2>
-            <p>Madencilik performansı</p>
+    <article class="panel performance-panel">
+
+        <div class="panel-head">
+            <div>
+                <span class="section-kicker">PERFORMANCE</span>
+                <h2>Hashrate Akışı</h2>
+                <p>Pool performansının zaman içindeki hareketi</p>
+            </div>
+
+            <div class="ranges">
+                <button data-hours="1" class="active">1 SAAT</button>
+                <button data-hours="6">6 SAAT</button>
+                <button data-hours="24">24 SAAT</button>
+            </div>
         </div>
 
-        <div class="ranges">
-            <button data-hours="1" class="active">1S</button>
-            <button data-hours="6">6S</button>
-            <button data-hours="24">24S</button>
+        <div class="chart-stats">
+            <div>
+                <span>6S ORTALAMA</span>
+                <strong id="avg-hashrate">0 H/s</strong>
+            </div>
+
+            <div>
+                <span>6S PEAK</span>
+                <strong id="peak-hashrate">0 H/s</strong>
+            </div>
+
+            <div>
+                <span>SON SHARE</span>
+                <strong id="last-share">—</strong>
+            </div>
         </div>
+
+        <div class="chart-wrap">
+            <canvas id="chart"></canvas>
+
+            <div id="chart-tooltip" class="chart-tooltip">
+                <span id="tooltip-time">—</span>
+                <strong id="tooltip-value">—</strong>
+            </div>
+        </div>
+
+    </article>
+
+
+    <aside class="side-stack">
+
+        <article class="panel effort-panel">
+
+            <div class="panel-head compact">
+                <div>
+                    <span class="section-kicker">CURRENT ROUND</span>
+                    <h2>Round Effort</h2>
+                </div>
+            </div>
+
+            <div class="effort-body">
+                <div class="effort-ring" id="effort-ring">
+                    <div>
+                        <strong id="effort-pct">0.000%</strong>
+                        <span>EFFORT</span>
+                    </div>
+                </div>
+
+                <div class="effort-info">
+                    <div>
+                        <span>Birikmiş Diff</span>
+                        <strong id="round-diff">0</strong>
+                    </div>
+                    <div>
+                        <span>Network Diff</span>
+                        <strong id="network-diff">0</strong>
+                    </div>
+                </div>
+            </div>
+
+        </article>
+
+
+        <article class="panel share-panel">
+
+            <div class="panel-head compact">
+                <div>
+                    <span class="section-kicker">SHARE QUALITY</span>
+                    <h2>Share Akışı</h2>
+                </div>
+            </div>
+
+            <div class="share-grid">
+                <div class="share-box accepted">
+                    <span>ACCEPTED / 1S</span>
+                    <strong id="accepted1h">0</strong>
+                </div>
+
+                <div class="share-box rejected">
+                    <span>REJECTED / 1S</span>
+                    <strong id="rejected1h">0</strong>
+                </div>
+
+                <div class="share-box">
+                    <span>ACCEPTED / 24S</span>
+                    <strong id="accepted24h">0</strong>
+                </div>
+
+                <div class="share-box">
+                    <span>REJECTED / 24S</span>
+                    <strong id="rejected24h">0</strong>
+                </div>
+            </div>
+
+        </article>
+
+    </aside>
+
+</section>
+
+
+<section class="network-strip">
+
+    <div>
+        <span>BLOCK HEIGHT</span>
+        <strong id="block-height">—</strong>
     </div>
 
-    <div class="chart-wrap">
-        <canvas id="chart"></canvas>
+    <div>
+        <span>NETWORK HASHRATE</span>
+        <strong id="network-hashrate">—</strong>
+    </div>
+
+    <div>
+        <span>BLOCK REWARD</span>
+        <strong id="block-reward">—</strong>
+    </div>
+
+    <div>
+        <span>STRATUM</span>
+        <strong>TCP :3333</strong>
     </div>
 
 </section>
 
 
-<section class="panel">
+<section class="panel miners-panel">
 
     <div class="panel-head">
         <div>
+            <span class="section-kicker">MINERS</span>
             <h2>Madenciler</h2>
-            <p>Aktif worker performansı</p>
+            <p>Bağlı cihazların canlı performansı</p>
         </div>
+
+        <span class="table-badge">
+            LIVE WORKERS
+        </span>
     </div>
 
     <div class="table-wrap">
-
         <table>
-
             <thead>
             <tr>
                 <th>WORKER</th>
@@ -105,31 +273,30 @@
             <tbody id="miners">
             <tr>
                 <td colspan="5" class="empty">
-                    Henüz madenci yok
+                    Madenci bekleniyor
                 </td>
             </tr>
             </tbody>
-
         </table>
-
     </div>
 
 </section>
 
 
-<section class="panel">
+<section class="panel blocks-panel">
 
     <div class="panel-head">
         <div>
+            <span class="section-kicker">BLOCK HISTORY</span>
             <h2>Bulunan Bloklar</h2>
-            <p>Solo mining başarıları</p>
+            <p>Solo mining başarı kayıtları</p>
         </div>
+
+        <span class="btc-badge">₿ BITCOIN</span>
     </div>
 
     <div class="table-wrap">
-
         <table>
-
             <thead>
             <tr>
                 <th>HEIGHT</th>
@@ -147,23 +314,25 @@
                 </td>
             </tr>
             </tbody>
-
         </table>
-
     </div>
 
 </section>
 
 
 <footer>
-    <span>Stratum V1</span>
-    <strong>TCP :3333</strong>
-    <span class="sep">•</span>
-    <span>Coinbase</span>
-    <strong>SEFEROGULLARI</strong>
+    <div>
+        <span class="footer-dot"></span>
+        YUMLU SOLO ENGINE
+    </div>
+
+    <div>
+        Coinbase
+        <strong>/SEFEROGULLARI/</strong>
+    </div>
 </footer>
 
-</div>
+</main>
 
 <script src="/app.js"></script>
 

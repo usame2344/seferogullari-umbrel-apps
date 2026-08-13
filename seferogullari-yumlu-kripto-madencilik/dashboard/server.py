@@ -71,13 +71,20 @@ def overview():
 
     blocks = 0
     db_best = 0.0
+    db_hashrate_1m = 0.0
+    db_hashrate_5m = 0.0
+    db_workers = 0
 
     try:
         conn = db()
         cur = conn.cursor()
 
-        cur.execute("SELECT COUNT(*) FROM blocks WHERE height > 0")
-        blocks = cur.fetchone()[0]
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM blocks
+            WHERE height > 0
+        """)
+        blocks = int(cur.fetchone()[0] or 0)
 
         cur.execute("""
             SELECT COALESCE(MAX(best_share_difficulty), 0)
@@ -85,21 +92,77 @@ def overview():
         """)
         db_best = float(cur.fetchone()[0] or 0)
 
+        # Share difficulty -> estimated hashrate.
+        # H/s = sum(difficulty) * 2^32 / elapsed seconds.
+        cur.execute("""
+            SELECT COALESCE(
+                SUM(difficulty) FILTER (
+                    WHERE accepted
+                    AND created_at >= NOW() - INTERVAL '1 minute'
+                ), 0
+            )
+            FROM raw_shares
+        """)
+        diff_1m = float(cur.fetchone()[0] or 0)
+        db_hashrate_1m = diff_1m * 4294967296.0 / 60.0
+
+        cur.execute("""
+            SELECT COALESCE(
+                SUM(difficulty) FILTER (
+                    WHERE accepted
+                    AND created_at >= NOW() - INTERVAL '5 minutes'
+                ), 0
+            )
+            FROM raw_shares
+        """)
+        diff_5m = float(cur.fetchone()[0] or 0)
+        db_hashrate_5m = diff_5m * 4294967296.0 / 300.0
+
+        # Son 2 dakika içinde accepted share gönderen worker = aktif worker.
+        cur.execute("""
+            SELECT COUNT(DISTINCT miner_id)
+            FROM raw_shares
+            WHERE accepted
+              AND created_at >= NOW() - INTERVAL '2 minutes'
+        """)
+        db_workers = int(cur.fetchone()[0] or 0)
+
         cur.close()
         conn.close()
+
     except Exception:
         pass
 
+    ctl_hashrate_1m = float(stats.get("hashrate_1m") or 0)
+    ctl_hashrate_5m = float(stats.get("hashrate_5m") or 0)
+    ctl_workers = int(stats.get("authorized") or 0)
+
     return {
-        "hashrate_1m": float(stats.get("hashrate_1m") or 0),
-        "hashrate_5m": float(stats.get("hashrate_5m") or 0),
-        "workers": int(stats.get("authorized") or 0),
-        "connections": int(stats.get("connections") or 0),
+        # Control socket öncelikli; yoksa DB fallback.
+        "hashrate_1m": (
+            ctl_hashrate_1m
+            if ctl_hashrate_1m > 0
+            else db_hashrate_1m
+        ),
+        "hashrate_5m": (
+            ctl_hashrate_5m
+            if ctl_hashrate_5m > 0
+            else db_hashrate_5m
+        ),
+        "workers": (
+            ctl_workers
+            if ctl_workers > 0
+            else db_workers
+        ),
+        "connections": int(stats.get("connections") or db_workers),
         "best_share": max(best_round, db_best),
         "blocks": blocks,
         "uptime_seconds": int(stats.get("uptime_seconds") or 0),
-        "online": bool(stats)
+
+        # DB çalışıyorsa pool'u yine aktif kabul ediyoruz.
+        "online": bool(stats) or db_workers > 0
     }
+
 
 
 def miners():
@@ -114,7 +177,12 @@ def miners():
                 COALESCE(NULLIF(m.worker_name, ''), 'worker') AS worker_name,
                 m.status::text AS status,
                 COALESCE(m.best_share_difficulty, 0) AS best_share_difficulty,
-                m.last_share_at,
+                COALESCE((
+                    SELECT MAX(rs.created_at)
+                    FROM raw_shares rs
+                    WHERE rs.miner_id = m.id
+                      AND rs.accepted = TRUE
+                ), m.last_share_at) AS last_share_at,
                 COALESCE((
                     SELECT h.hashrate
                     FROM hashrates h
@@ -140,6 +208,148 @@ def miners():
         return []
 
 
+
+def analytics():
+    data = {
+        "accepted_1h": 0,
+        "rejected_1h": 0,
+        "accepted_24h": 0,
+        "rejected_24h": 0,
+        "round_diff": 0.0,
+        "round_effort_pct": 0.0,
+        "network_difficulty": 0.0,
+        "network_hashrate": 0.0,
+        "block_height": 0,
+        "block_reward": 0.0,
+        "network_updated_at": None,
+        "avg_hashrate_6h": 0.0,
+        "peak_hashrate_6h": 0.0,
+        "last_share_at": None
+    }
+
+    try:
+        conn = db()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cur.execute("""
+            SELECT
+                COUNT(*) FILTER (
+                    WHERE accepted
+                    AND created_at >= NOW() - INTERVAL '1 hour'
+                ) AS accepted_1h,
+
+                COUNT(*) FILTER (
+                    WHERE NOT accepted
+                    AND created_at >= NOW() - INTERVAL '1 hour'
+                ) AS rejected_1h,
+
+                COUNT(*) FILTER (
+                    WHERE accepted
+                    AND created_at >= NOW() - INTERVAL '24 hours'
+                ) AS accepted_24h,
+
+                COUNT(*) FILTER (
+                    WHERE NOT accepted
+                    AND created_at >= NOW() - INTERVAL '24 hours'
+                ) AS rejected_24h,
+
+                MAX(created_at) FILTER (WHERE accepted) AS last_share_at
+            FROM raw_shares
+        """)
+
+        row = cur.fetchone()
+
+        if row:
+            for k in (
+                "accepted_1h",
+                "rejected_1h",
+                "accepted_24h",
+                "rejected_24h"
+            ):
+                data[k] = int(row[k] or 0)
+
+            if row["last_share_at"]:
+                data["last_share_at"] = row["last_share_at"].isoformat()
+
+        cur.execute("""
+            SELECT COALESCE(accum_diff, 0) AS accum_diff
+            FROM effort_state
+            ORDER BY id
+            LIMIT 1
+        """)
+
+        row = cur.fetchone()
+        if row:
+            data["round_diff"] = float(row["accum_diff"] or 0)
+
+        cur.execute("""
+            SELECT
+                network_difficulty,
+                network_hashrate,
+                block_height,
+                block_reward,
+                updated_at
+            FROM network_stats
+            WHERE UPPER(coin) = 'BTC'
+            LIMIT 1
+        """)
+
+        row = cur.fetchone()
+
+        if row:
+            data["network_difficulty"] = float(
+                row["network_difficulty"] or 0
+            )
+            data["network_hashrate"] = float(
+                row["network_hashrate"] or 0
+            )
+            data["block_height"] = int(
+                row["block_height"] or 0
+            )
+            data["block_reward"] = float(
+                row["block_reward"] or 0
+            )
+
+            if row["updated_at"]:
+                data["network_updated_at"] = (
+                    row["updated_at"].isoformat()
+                )
+
+        if data["network_difficulty"] > 0:
+            data["round_effort_pct"] = (
+                data["round_diff"]
+                / data["network_difficulty"]
+                * 100.0
+            )
+
+        cur.execute("""
+            SELECT
+                COALESCE(AVG(pool_hr), 0) AS avg_hr,
+                COALESCE(MAX(pool_hr), 0) AS peak_hr
+            FROM (
+                SELECT
+                    created_at,
+                    SUM(hashrate) AS pool_hr
+                FROM hashrates
+                WHERE created_at >= NOW() - INTERVAL '6 hours'
+                GROUP BY created_at
+            ) q
+        """)
+
+        row = cur.fetchone()
+
+        if row:
+            data["avg_hashrate_6h"] = float(row["avg_hr"] or 0)
+            data["peak_hashrate_6h"] = float(row["peak_hr"] or 0)
+
+        cur.close()
+        conn.close()
+
+    except Exception as e:
+        data["error"] = str(e)
+
+    return data
+
 def blocks():
     try:
         conn = db()
@@ -154,6 +364,7 @@ def blocks():
                 b.reward_value,
                 b.difficulty,
                 b.round_effort,
+                b.net_difficulty,
                 b.finder_effort,
                 b.found_at
             FROM blocks b
@@ -247,6 +458,9 @@ class Handler(SimpleHTTPRequestHandler):
 
         if parsed.path == "/api/miners":
             return self.json_response(miners())
+
+        if parsed.path == "/api/analytics":
+            return self.json_response(analytics())
 
         if parsed.path == "/api/blocks":
             return self.json_response(blocks())

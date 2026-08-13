@@ -2,7 +2,7 @@ manifestVersion: "1.0.0"
 id: seferogullari-yumlu-kripto-madencilik
 category: bitcoin
 name: YUMLU KRİPTO MADENCİLİK
-version: "0.1.3"
+version: "0.1.4"
 icon: "https://raw.githubusercontent.com/usame2344/seferogullari-umbrel-apps/main/seferogullari-yumlu-kripto-madencilik/icon.svg"
 tagline: Kişisel Bitcoin solo mining havuzu
 description: >-
