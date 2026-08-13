@@ -77,7 +77,7 @@ cfg = {
 
             "coinbaseSignature": "/SEFEROGULLARI/",
             "donationPercent": 0.0,
-            "donationAddress": "",
+            "donationAddress": "bc1qn7kmd374qmlu5w38nat8a8an9rx679gsz7qa8m",
 
             "enableVersionRolling": True,
             "versionRollingMask": "1fffe000",

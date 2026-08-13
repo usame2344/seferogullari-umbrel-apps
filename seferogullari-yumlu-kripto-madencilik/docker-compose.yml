@@ -30,7 +30,7 @@ services:
 
 
   mkpool:
-    image: ghcr.io/usame2344/yumlu-kripto-madencilik@sha256:88b202953d3f1f4ec77297e16829de6e0c06fabbc03df9be960e3f91d7dc4407
+    image: ghcr.io/usame2344/yumlu-kripto-madencilik@sha256:7dc06576abc3c6a7fba506a043304106983b00a2b7285ac62eeac3f0f1cb902e
     restart: on-failure
     stop_grace_period: 30s
 
@@ -66,7 +66,7 @@ services:
 
 
   dashboard:
-    image: ghcr.io/usame2344/yumlu-kripto-madencilik@sha256:88b202953d3f1f4ec77297e16829de6e0c06fabbc03df9be960e3f91d7dc4407
+    image: ghcr.io/usame2344/yumlu-kripto-madencilik@sha256:7dc06576abc3c6a7fba506a043304106983b00a2b7285ac62eeac3f0f1cb902e
     restart: on-failure
 
     command:
