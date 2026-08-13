@@ -305,7 +305,7 @@ void DbWorker::run() {
                 if (batch_diff > 0.0)
                     txn.exec(
                         "UPDATE effort_state SET accum_diff = accum_diff + $1, "
-                        "updated_at = now() WHERE id", pqxx::params{batch_diff});
+                        "updated_at = now() WHERE id = 1", pqxx::params{batch_diff});
             }
 
             for (const auto& b : best_batch) {
@@ -427,7 +427,7 @@ void DbWorker::run() {
                 if (!is_aux) {
                     txn.exec(
                         "UPDATE effort_state SET accum_diff = 0, last_block_height = $1, "
-                        "last_reset = now(), updated_at = now() WHERE id", pqxx::params{b.height});
+                        "last_reset = now(), updated_at = now() WHERE id = 1", pqxx::params{b.height});
                 }
             }
 
