@@ -62,8 +62,10 @@ cfg = {
             "stratumV2Port": 3340,
             "stratumV2Difficulty": 4096,
             "stratumV2EmptyBlocks": False,
-            "sv2NoiseRequired": False,
-            "sv2AuthorityKey": "",
+            "sv2NoiseRequired": True,
+            "sv2AuthorityKey": open(
+                "/data/secrets/sv2-authority-private.hex"
+            ).read().strip(),
 
             "stratumTiers": [
                 {
