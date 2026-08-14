@@ -30,7 +30,7 @@ services:
 
 
   mkpool:
-    image: ghcr.io/usame2344/yumlu-kripto-madencilik@sha256:09d1c8de1c263db0b74446092f9d3676260b1a33608736a33d6ad2effd74abfa
+    image: ghcr.io/usame2344/yumlu-kripto-madencilik@sha256:a7faa453d8ad38888e0d9b23750d13c1e9745be8a7046ef79d0e49342992f4b9
     restart: on-failure
     stop_grace_period: 30s
 
@@ -43,6 +43,7 @@ services:
 
     ports:
       - "3333:3333/tcp"
+      - "3340:3340/tcp"
 
     environment:
       DB_HOST: seferogullari-yumlu-kripto-madencilik_db_1
@@ -66,7 +67,7 @@ services:
 
 
   dashboard:
-    image: ghcr.io/usame2344/yumlu-kripto-madencilik@sha256:09d1c8de1c263db0b74446092f9d3676260b1a33608736a33d6ad2effd74abfa
+    image: ghcr.io/usame2344/yumlu-kripto-madencilik@sha256:a7faa453d8ad38888e0d9b23750d13c1e9745be8a7046ef79d0e49342992f4b9
     restart: on-failure
 
     command:

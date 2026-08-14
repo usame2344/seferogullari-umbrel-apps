@@ -58,7 +58,12 @@ cfg = {
             "stratumListenAddress": "0.0.0.0",
             "stratumListenPort": 3333,
 
-            "stratumV2Port": 0,
+            # Stratum V2
+            "stratumV2Port": 3340,
+            "stratumV2Difficulty": 4096,
+            "stratumV2EmptyBlocks": False,
+            "sv2NoiseRequired": False,
+            "sv2AuthorityKey": "",
 
             "stratumTiers": [
                 {
